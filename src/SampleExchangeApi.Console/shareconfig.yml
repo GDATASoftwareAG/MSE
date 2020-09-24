@@ -1,0 +1,7 @@
+
+Partners:
+  - Name: testuser
+    Password: 201e34e7eda3889b4a285be3ccab2d779e572dbdf6e19fb42c5e1817ae09751c
+    Salt: f3efd5669788303fac9b466c2f71ec6a834aff49dcc8ab87086137d9bd92bf10
+    Enabled: Yes
+    Sampleset: test
