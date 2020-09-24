@@ -1,3 +1,5 @@
+# Malware Sample Exchange (MSE)
+
 This service provides a REST API for sharing samples with partners in the outside world. Use cases are the request
 of a list of available samples within a certain time period and the download of listed samples.
 
