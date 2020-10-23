@@ -7,7 +7,6 @@ using System.Linq;
 using JWT.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
 using MongoDB.Driver;
 using Moq;
 using SampleExchangeApi.Console.Database.TempSampleDB;
@@ -29,9 +28,11 @@ namespace SampleExchangeApi.Console_Test
             .AddJsonFile("appsettings.json")
             .Build();
 
-        private static readonly ILoggerProvider ConsoleLoggerProvider = new ConsoleLoggerProvider(
-            (text, logLevel) => logLevel >= LogLevel.Information , true);
-        private static readonly ILogger Logger = ConsoleLoggerProvider.CreateLogger("Logger");
+        private static readonly ILogger Logger = LoggerFactory.Create(builder =>
+        {
+            builder.AddFilter("Logger", LogLevel.Information);
+            builder.AddConsole();
+        }).CreateLogger("Logger");
 
         public SampleExchangeTest(DockerFixture dockerFixture)
         {
@@ -182,7 +183,6 @@ namespace SampleExchangeApi.Console_Test
                 .MustVerifySignature();
             
             var mongoClient = new MongoClient($"mongodb://{_dockerFixture.IpAddress}:27017");
-
             var listRequester = new ListRequester(Configuration, Logger,
                 new MongoMetadataReader(Configuration, mongoClient), GetShareConfig());
 

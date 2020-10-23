@@ -24,7 +24,7 @@ namespace SampleExchangeApi.Console
         {
             services
                 .AddMvc()
-                .AddJsonOptions(opts =>
+                .AddNewtonsoftJson(opts =>
                 {
                     opts.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
                     var item = new StringEnumConverter {NamingStrategy = new CamelCaseNamingStrategy()};

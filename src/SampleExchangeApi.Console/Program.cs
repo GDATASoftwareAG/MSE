@@ -23,9 +23,11 @@ namespace SampleExchangeApi.Console
             .AddJsonFile("appsettings.json")
             .Build();
 
-        private static readonly ILoggerProvider ConsoleLoggerProvider = new ConsoleLoggerProvider(
-            (text, logLevel) => logLevel >= LogLevel.Information , true);
-        private static readonly ILogger Logger = ConsoleLoggerProvider.CreateLogger("Logger");
+        private static readonly ILogger Logger = LoggerFactory.Create(builder =>
+        {
+            builder.AddConsole();
+            builder.AddFilter("Logger", LogLevel.Information);
+        }).CreateLogger("Logger");
 
         public static void Main(string[] args)
         {
