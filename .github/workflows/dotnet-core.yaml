@@ -32,7 +32,7 @@ jobs:
 
     # Run only if a tag with the format "*.*.*" is pushed.
     - name: Log in to Docker Hub
-      run: docker login -u="$DOCKER_HUB_USER" -p="$DOCKER_HUB_PASSWORD"
+      run: docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASSWORD
       if: startsWith(github.ref, 'refs/tags')
     - name: Push docker image
       run: docker push gdatacyberdefense/sampleexchange:$RELEASE_VERSION
