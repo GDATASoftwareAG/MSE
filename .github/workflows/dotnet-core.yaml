@@ -25,12 +25,15 @@ jobs:
       run: dotnet restore SampleExchangeApi.sln
     - name: Build
       run: dotnet build --configuration Release --no-restore SampleExchangeApi.sln
-    # - name: Test
-    #   run: dotnet test --no-restore --verbosity normal SampleExchangeApi.sln
+    - name: Test
+      run: dotnet test --no-restore --verbosity normal SampleExchangeApi.sln
     - name: Build docker image
-      run: docker build -t sampleexchange:$RELEASE_VERSION .
+      run: docker build -t gdatacyberdefense/sampleexchange:$RELEASE_VERSION .
 
-
+    # Run only if a tag with the format "*.*.*" is pushed.
+    - name: Log in to Docker Hub
+      run: docker login -u="$DOCKER_HUB_USER" -p="$DOCKER_HUB_PASSWORD"
+      if: startsWith(github.ref, 'refs/tags')
     - name: Push docker image
-      run: docker push sampleexchange:$RELEASE_VERSION
+      run: docker push gdatacyberdefense/sampleexchange:$RELEASE_VERSION
       if: startsWith(github.ref, 'refs/tags')
