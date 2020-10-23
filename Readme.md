@@ -21,3 +21,17 @@ Now you can start up Exchange API by changing to directory ```./src/SampleExchan
  guarantees that the JWT is valid.
  If after checking that the sample is not already part of your collection and you have interest in the reported platform,
  you can download it with ```curl -X GET -k "http://localhost:8080/v1/download?token=$PUT_TOKEN_HERE"```. 
+
+
+## Build and Release
+
+A GitHub action builds on every push and pull request. A new Docker image will be pushed to the Docker Hub.
+
+ To release a new version, push a tagged version like this:
+
+```bash
+git tag -a 1.0.0 -m "Release version 1.0.0"
+git push origin 1.0.0
+```
+
+Replace with the corresponding version.
