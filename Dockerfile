@@ -1,4 +1,4 @@
-FROM artifactory.gdata.de:6555/dotnet/runtime:2.2
+FROM mcr.microsoft.com/dotnet/core/aspnet
 COPY artifacts/SampleExchangeApi.Console/ /data
 WORKDIR /data
 ENTRYPOINT dotnet /data/SampleExchangeApi.Console.dll
