@@ -29,6 +29,9 @@ jobs:
       run: dotnet test --no-restore --verbosity normal SampleExchangeApi.sln
     - name: Build docker image
       run: docker build -t sampleexchange:$RELEASE_VERSION .
+
+    - name: Check if Git tag exists
+      run: echo "::set-env name=HEAD_TAG::$(git tag --points-at HEAD)"
     - name: Push docker image
       run: docker push sampleexchange:$RELEASE_VERSION
-      if: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+      if: env.HEAD_TAG != ''
