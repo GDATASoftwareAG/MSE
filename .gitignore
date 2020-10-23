@@ -8,6 +8,7 @@ PID
 *.user
 *.userosscache
 *.sln.docstates
+.ionide/
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
