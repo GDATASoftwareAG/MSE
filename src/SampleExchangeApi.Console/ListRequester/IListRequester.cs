@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using OpenTracing;
 using SampleExchangeApi.Console.Models;
 
 namespace SampleExchangeApi.Console.ListRequester

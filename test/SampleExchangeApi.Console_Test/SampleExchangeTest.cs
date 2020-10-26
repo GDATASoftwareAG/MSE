@@ -45,7 +45,7 @@ namespace SampleExchangeApi.Console_Test
             var input = new StringReader(document);
 
             var deserializer = new DeserializerBuilder()
-                .WithNamingConvention(new PascalCaseNamingConvention())
+                .WithNamingConvention(PascalCaseNamingConvention.Instance)
                 .Build();
 
             return deserializer.Deserialize<Settings>(input);

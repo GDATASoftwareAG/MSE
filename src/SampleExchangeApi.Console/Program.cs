@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
 using MongoDB.Driver;
 using SampleExchangeApi.Console.Database.TempSampleDB;
 using SampleExchangeApi.Console.ListRequester;
