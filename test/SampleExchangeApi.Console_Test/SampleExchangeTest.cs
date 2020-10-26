@@ -184,7 +184,7 @@ namespace SampleExchangeApi.Console_Test
             
             var mongoClient = new MongoClient($"mongodb://{_dockerFixture.IpAddress}:27017");
             var listRequester = new ListRequester(Configuration, Logger,
-                new MongoMetadataReader(Configuration, mongoClient), GetShareConfig());
+                new MongoMetadataReader(Configuration, mongoClient, Logger), GetShareConfig());
 
             var sampleGetter = new SampleGetter(Configuration, Logger);
 
