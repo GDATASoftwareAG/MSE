@@ -45,7 +45,7 @@ namespace SampleExchangeApi.Console.Controllers
         [HttpGet]
         [Route("/v1/download")]
         [ValidateModelState]
-        public async Task<IActionResult> DownloadSample([FromQuery] [Required()] string token)
+        public IActionResult DownloadSample([FromQuery][Required()] string token)
         {
             var partner = string.Empty;
 
@@ -58,8 +58,8 @@ namespace SampleExchangeApi.Console.Controllers
                     .Decode<IDictionary<string, object>>(token);
                 var sha256 = deserializedToken["sha256"].ToString();
                 partner = deserializedToken["partner"].ToString();
-                
-                return await _sampleGetter.GetAsync(sha256, partner, correlationToken);
+
+                return _sampleGetter.Get(sha256, partner, correlationToken);
             }
             catch (SecurityTokenExpiredException tokenExpiredException)
             {

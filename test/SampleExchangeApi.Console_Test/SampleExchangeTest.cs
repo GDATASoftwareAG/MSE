@@ -205,7 +205,7 @@ namespace SampleExchangeApi.Console_Test
             {
                 sha256String = HexStringFromBytes(sha256
                     .ComputeHash(sampleGetter
-                        .GetAsync(sha256FromToken, partnerFromToken, "eltesto").Result.FileStream));
+                        .Get(sha256FromToken, partnerFromToken, "eltesto").FileStream));
             }
 
             Assert.Single(tokens.Result);
