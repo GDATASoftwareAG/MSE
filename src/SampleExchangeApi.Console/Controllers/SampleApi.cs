@@ -4,13 +4,13 @@ using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using JWT;
 using JWT.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SampleExchangeApi.Console.Attributes;
 using SampleExchangeApi.Console.Models;
 using SampleExchangeApi.Console.SampleDownload;
+using Microsoft.IdentityModel.Tokens;
 
 namespace SampleExchangeApi.Console.Controllers
 {
@@ -61,7 +61,7 @@ namespace SampleExchangeApi.Console.Controllers
                 
                 return await _sampleGetter.GetAsync(sha256, partner, correlationToken);
             }
-            catch (TokenExpiredException tokenExpiredException)
+            catch (SecurityTokenExpiredException tokenExpiredException)
             {
                 _logger.LogWarning(tokenExpiredException, $"Token {token} expired.");
                 return StatusCode(401, new Error

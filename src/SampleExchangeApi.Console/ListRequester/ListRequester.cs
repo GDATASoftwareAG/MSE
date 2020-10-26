@@ -75,8 +75,7 @@ namespace SampleExchangeApi.Console.ListRequester
                                 .AddClaim("sha256", sample.Sha256)
                                 .AddClaim("filesize", fileSize)
                                 .AddClaim("platform", sample.Platform)
-                                .AddClaim("partner", username)
-                                .Build()
+                                .AddClaim("partner", username).Encode()
                         });
                     }
                 }
