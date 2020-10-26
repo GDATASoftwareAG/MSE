@@ -86,7 +86,6 @@ spec:
           ports:
             - containerPort: 27017
               name: mongodb
-              protocol: TCP
           volumeMounts:
             - mountPath: "/mnt/sampleexportstorage/"
               name: mse-storage

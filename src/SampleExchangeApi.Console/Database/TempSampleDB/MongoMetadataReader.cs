@@ -16,7 +16,7 @@ namespace SampleExchangeApi.Console.Database.TempSampleDB
         public MongoMetadataReader(IConfiguration configuration, IMongoClient mongoClient, ILogger logger)
         {
             _logger = logger;
-            
+
             try {
                 var mongoDatabase = mongoClient.GetDatabase(configuration["MongoDb:DatabaseName"]);
                 _sampleCollection = mongoDatabase.GetCollection<ExportSample>(configuration["MongoDb:CollectionName"]);

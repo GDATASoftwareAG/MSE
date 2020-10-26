@@ -7,7 +7,7 @@ import os
 import sys, getopt
 
 def put_string_into_db(sha256, platform, file_size, sample_set, mongo_collection):
-    current_iso_datetime = datetime.datetime.now()
+    current_iso_datetime = datetime.datetime.utcnow()
     entry = {
                 "_id": f"{sha256}:test",
                 "Sha256": sha256,
