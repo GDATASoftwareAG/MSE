@@ -29,6 +29,8 @@ jobs:
       run: dotnet test --no-restore --verbosity normal SampleExchangeApi.sln
     - name: Build docker image
       run: docker build -t gdatacyberdefense/sampleexchange:$RELEASE_VERSION .
+    - name: Tag latest
+      run: docker tag gdatacyberdefense/sampleexchange:$RELEASE_VERSION gdatacyberdefense/sampleexchange:latest
     
     # Run only if a tag with the format "*.*.*" is pushed.
     - name: Login to DockerHub
@@ -38,5 +40,5 @@ jobs:
         password: ${{ secrets.DOCKER_HUB_PASSWORD }}
       if: startsWith(github.ref, 'refs/tags')
     - name: Push docker image
-      run: docker push gdatacyberdefense/sampleexchange:$RELEASE_VERSION
+      run: docker push gdatacyberdefense/sampleexchange:$RELEASE_VERSION && docker push gdatacyberdefense/sampleexchange:latest
       if: startsWith(github.ref, 'refs/tags')

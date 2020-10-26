@@ -1,3 +1,12 @@
+#######################################################################
+#
+# MSE Kubernetes deployment example
+#
+# This example is for local testing or as a starting point.
+# Do not use this in production without carefully reviewing
+# the configured settings.
+#
+#######################################################################
 
 ---
 apiVersion: v1
@@ -8,12 +17,17 @@ metadata:
     type: local
 spec:
   storageClassName: manual
+  # Configure the capacity of the storage for samples.
+  # For the example, only 100MB are used.
   capacity:
     storage: 100Mi
   accessModes:
     - ReadWriteOnce
+  # Configure the path to the local storage where all samples
+  # and the Mongodb reside.
   hostPath:
-    path: "/mnt/kubedata/mse"
+    path: "/mnt/sampleexportstorage"
+
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -25,7 +39,10 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
+      # Configure the capacity claimed by the app
+      # for the sample storage
       storage: 100Mi
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -49,7 +66,8 @@ spec:
             claimName: mse
       containers:
         - name: mse
-          image: gdatacyberdefense/sampleexchange:1.0.0
+          # Pin to specific version in production to prevent breaking changes
+          image: gdatacyberdefense/sampleexchange:latest
           imagePullPolicy: IfNotPresent
           stdin: true
           tty: true
@@ -72,6 +90,7 @@ spec:
           volumeMounts:
             - mountPath: "/mnt/sampleexportstorage/"
               name: mse-storage
+
 ---
 apiVersion: v1
 kind: Service
@@ -86,6 +105,14 @@ spec:
   externalTrafficPolicy: Local
   ports:
     - name: mse-http
+      targetPort: 8080
       port: 8080
       protocol: TCP
-    
+      # REST API port reachable from outside of the k8s cluster
+      nodePort: 32000
+    - name: mongodb-tcp
+      targetPort: 27017
+      port: 27017
+      protocol: TCP
+      # Mongodb port reachable from outside of the k8s cluster
+      nodePort: 32001
