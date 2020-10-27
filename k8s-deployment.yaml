@@ -1,0 +1,117 @@
+#######################################################################
+#
+# MSE Kubernetes deployment example
+#
+# This example is for local testing or as a starting point.
+# Do not use this in production without carefully reviewing
+# the configured settings.
+#
+#######################################################################
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mse
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  # Configure the capacity of the storage for samples.
+  # For the example, only 100MB are used.
+  capacity:
+    storage: 100Mi
+  accessModes:
+    - ReadWriteOnce
+  # Configure the path to the local storage where all samples
+  # and the Mongodb reside.
+  hostPath:
+    path: "/mnt/sampleexportstorage"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mse
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      # Configure the capacity claimed by the app
+      # for the sample storage
+      storage: 100Mi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mse
+  labels:
+    app: mse
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mse
+  template:
+    metadata:
+      labels:
+        app: mse
+    spec:
+      volumes:
+        - name: mse-storage
+          persistentVolumeClaim:
+            claimName: mse
+      containers:
+        - name: mse
+          # Pin to specific version in production to prevent breaking changes
+          image: gdatacyberdefense/sampleexchange:latest
+          imagePullPolicy: IfNotPresent
+          stdin: true
+          tty: true
+          ports:
+            - containerPort: 8080
+              name: mse-http
+              protocol: TCP
+          volumeMounts:
+            - mountPath: "/mnt/sampleexportstorage/"
+              name: mse-storage
+        - name: mongodb
+          image: mongo:4.0.20
+          imagePullPolicy: IfNotPresent
+          stdin: true
+          tty: true
+          ports:
+            - containerPort: 27017
+              name: mongodb
+          volumeMounts:
+            - mountPath: "/mnt/sampleexportstorage/"
+              name: mse-storage
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mse
+  labels:
+    name: mse
+spec:
+  type: NodePort
+  selector:
+    app: mse
+  externalTrafficPolicy: Local
+  ports:
+    - name: mse-http
+      targetPort: 8080
+      port: 8080
+      protocol: TCP
+      # REST API port reachable from outside of the k8s cluster
+      nodePort: 32000
+    - name: mongodb-tcp
+      targetPort: 27017
+      port: 27017
+      protocol: TCP
+      # Mongodb port reachable from outside of the k8s cluster
+      nodePort: 32001

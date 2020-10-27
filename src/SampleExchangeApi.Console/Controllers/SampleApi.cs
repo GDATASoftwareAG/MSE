@@ -4,14 +4,13 @@ using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Swashbuckle.AspNetCore.SwaggerGen;
-using JWT;
 using JWT.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SampleExchangeApi.Console.Attributes;
 using SampleExchangeApi.Console.Models;
 using SampleExchangeApi.Console.SampleDownload;
+using Microsoft.IdentityModel.Tokens;
 
 namespace SampleExchangeApi.Console.Controllers
 {
@@ -46,13 +45,7 @@ namespace SampleExchangeApi.Console.Controllers
         [HttpGet]
         [Route("/v1/download")]
         [ValidateModelState]
-        [SwaggerOperation("DownloadSample")]
-        [SwaggerResponse(statusCode: 500, type: typeof(Error),
-            description: "We encountered an error while processing the request.")]
-        [SwaggerResponse(statusCode: 401, type: typeof(Error), description: "The token is expired.")]
-        [SwaggerResponse(statusCode: 400, type: typeof(Error), description: "Bad request.")]
-        [SwaggerResponse(statusCode: 200, type: typeof(Sample), description: "The requested sample.")]
-        public async Task<IActionResult> DownloadSample([FromQuery] [Required()] string token)
+        public IActionResult DownloadSample([FromQuery][Required()] string token)
         {
             var partner = string.Empty;
 
@@ -65,10 +58,10 @@ namespace SampleExchangeApi.Console.Controllers
                     .Decode<IDictionary<string, object>>(token);
                 var sha256 = deserializedToken["sha256"].ToString();
                 partner = deserializedToken["partner"].ToString();
-                
-                return await _sampleGetter.GetAsync(sha256, partner, correlationToken);
+
+                return _sampleGetter.Get(sha256, partner, correlationToken);
             }
-            catch (TokenExpiredException tokenExpiredException)
+            catch (SecurityTokenExpiredException tokenExpiredException)
             {
                 _logger.LogWarning(tokenExpiredException, $"Token {token} expired.");
                 return StatusCode(401, new Error

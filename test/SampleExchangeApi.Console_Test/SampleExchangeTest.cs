@@ -7,7 +7,6 @@ using System.Linq;
 using JWT.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
 using MongoDB.Driver;
 using Moq;
 using SampleExchangeApi.Console.Database.TempSampleDB;
@@ -17,6 +16,7 @@ using SampleExchangeApi.Console.SampleDownload;
 using Xunit;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
+using JWT.Algorithms;
 
 namespace SampleExchangeApi.Console_Test
 {
@@ -29,9 +29,11 @@ namespace SampleExchangeApi.Console_Test
             .AddJsonFile("appsettings.json")
             .Build();
 
-        private static readonly ILoggerProvider ConsoleLoggerProvider = new ConsoleLoggerProvider(
-            (text, logLevel) => logLevel >= LogLevel.Information , true);
-        private static readonly ILogger Logger = ConsoleLoggerProvider.CreateLogger("Logger");
+        private static readonly ILogger Logger = LoggerFactory.Create(builder =>
+        {
+            builder.AddFilter("Logger", LogLevel.Information);
+            builder.AddConsole();
+        }).CreateLogger("Logger");
 
         public SampleExchangeTest(DockerFixture dockerFixture)
         {
@@ -44,7 +46,7 @@ namespace SampleExchangeApi.Console_Test
             var input = new StringReader(document);
 
             var deserializer = new DeserializerBuilder()
-                .WithNamingConvention(new PascalCaseNamingConvention())
+                .WithNamingConvention(PascalCaseNamingConvention.Instance)
                 .Build();
 
             return deserializer.Deserialize<Settings>(input);
@@ -174,28 +176,30 @@ namespace SampleExchangeApi.Console_Test
         }
 
         [Fact]
-        public void BusinessLogicCallback_GetSampleToken()
+        public async void BusinessLogicCallback_GetSampleToken()
         {
             string sha256String;
-            var jwtBuilder = new JwtBuilder()
-                .WithSecret(Configuration["Token:Secret"])
-                .MustVerifySignature();
-            
             var mongoClient = new MongoClient($"mongodb://{_dockerFixture.IpAddress}:27017");
-
             var listRequester = new ListRequester(Configuration, Logger,
-                new MongoMetadataReader(Configuration, mongoClient), GetShareConfig());
+                new MongoMetadataReader(Configuration, mongoClient, Logger), GetShareConfig());
 
             var sampleGetter = new SampleGetter(Configuration, Logger);
 
             WriteFakeDataIntoTestMongo(mongoClient);
             CreateTestFile();
 
-            var tokens = listRequester
+            var tokens = await listRequester
                 .RequestListAsync("GanzTollerTauschPartner", DateTime.Now.AddDays(-7),
                     null, "eltesto");
-            
-            var deserializedToken = jwtBuilder.Decode<IDictionary<string, object>>(tokens.Result[0]._Token);
+
+            var deserializedToken = new JwtBuilder()
+                .WithAlgorithm(new HMACSHA512Algorithm()) // symmetric
+                .WithSecret(Configuration["Token:Secret"])
+                .MustVerifySignature()
+                .Decode<IDictionary<string, object> > (tokens[0]._Token);
+
+
+            //var deserializedToken = jwtBuilder.Decode<IDictionary<string, object>>(tokens[0]._Token, Configuration["Token:Secret"], verify: true);
             
             var sha256FromToken = deserializedToken["sha256"].ToString();
             var partnerFromToken = deserializedToken["partner"].ToString();
@@ -205,10 +209,10 @@ namespace SampleExchangeApi.Console_Test
             {
                 sha256String = HexStringFromBytes(sha256
                     .ComputeHash(sampleGetter
-                        .GetAsync(sha256FromToken, partnerFromToken, "eltesto").Result.FileStream));
+                        .Get(sha256FromToken, partnerFromToken, "eltesto").FileStream));
             }
 
-            Assert.Single(tokens.Result);
+           // Assert.Single(tokens.Result);
             Assert.Equal("131f95c51cc819465fa1797f6ccacf9d494aaaff46fa3eac73ae63ffbdfd8267", sha256String);
             Assert.Equal(69,filesizeFromToken);
         }

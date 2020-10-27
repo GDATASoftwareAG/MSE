@@ -1,12 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Swashbuckle.AspNetCore.SwaggerGen;
 using SampleExchangeApi.Console.Attributes;
 using SampleExchangeApi.Console.ListRequester;
 using SampleExchangeApi.Console.Models;
@@ -69,14 +67,6 @@ namespace SampleExchangeApi.Console.Controllers
         [HttpGet]
         [Route("/v1/list")]
         [ValidateModelState]
-        [SwaggerOperation("ListTokens")]
-        [SwaggerResponse(statusCode: 502, type: typeof(Error),
-            description: "We encountered an error while processing the request.")]
-        [SwaggerResponse(statusCode: 400, type: typeof(Error), description: "Start date has to be before end date.")]
-        [SwaggerResponse(statusCode: 401, type: typeof(Error), description: "Login failure.")]
-        [SwaggerResponse(statusCode: 402, type: typeof(Error), description: "Start date cannot be older than 7 days.")]
-        [SwaggerResponse(statusCode: 200, type: typeof(List<Models.Token>), description: "A list of samples as jwt.")]
-        [SwaggerResponse(statusCode: 0, type: typeof(Error), description: "unexpected error")]
         public async Task<IActionResult> ListTokens([FromQuery] [Required()] DateTime start, [FromQuery] DateTime? end)
         {
             var correlationToken = Guid.NewGuid().ToString();

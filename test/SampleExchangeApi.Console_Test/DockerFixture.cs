@@ -31,15 +31,16 @@ namespace SampleExchangeApi.Console_Test
             _container =
                 new Builder().UseContainer()
                     .UseImage("mongo:xenial")
+                    .ExposePort(27017, 27017)
                     .Build()
                     .Start();
 
-            var containerIp = _container.GetConfiguration().NetworkSettings.IPAddress;
+            var containerIp = "127.0.0.1";
 
             Environment.SetEnvironmentVariable("MongoDb__ConnectionString", $"mongodb://{containerIp}:27017");
 
             Thread.Sleep(10000);
-            return _container.GetConfiguration().NetworkSettings.IPAddress;
+            return containerIp;
         }
 
         private static void StopDockerContainer(IService container)

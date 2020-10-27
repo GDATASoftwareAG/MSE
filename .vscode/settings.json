@@ -1,0 +1,9 @@
+{
+    "cSpell.words": [
+        "Kubernetes",
+        "kubectl"
+    ],
+    "python.linting.pylintEnabled": false,
+    "python.linting.enabled": true,
+    "python.linting.pylamaEnabled": true
+}
