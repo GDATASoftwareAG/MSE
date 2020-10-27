@@ -30,7 +30,7 @@ python3 ./src/ python3 main.py -s "/mnt/sampleexportstorage" -m "mongodb://local
 curl -u "testuser:somenicepassword" -X GET -k -i 'http://localhost:32000/v1/list?start=2020-09-23'
 
 # Remove all k8s resources (does not remove /mnt/sampleexportstorage)
-./remove-k8s-depoyment.sh
+kubectl apply/delete -f k8s-deployment.yaml
 ```
 
 
