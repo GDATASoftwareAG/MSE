@@ -27,12 +27,14 @@ jobs:
       run: dotnet build --configuration Release --no-restore SampleExchangeApi.sln
     - name: Test
       run: dotnet test --no-restore --verbosity normal SampleExchangeApi.sln
+
+    # Run only if a tag with the format "*.*.*" is pushed.
     - name: Build docker image
       run: docker build -t gdatacyberdefense/sampleexchange:$RELEASE_VERSION .
+      if: startsWith(github.ref, 'refs/tags')
     - name: Tag latest
       run: docker tag gdatacyberdefense/sampleexchange:$RELEASE_VERSION gdatacyberdefense/sampleexchange:latest
-    
-    # Run only if a tag with the format "*.*.*" is pushed.
+      if: startsWith(github.ref, 'refs/tags')
     - name: Login to DockerHub
       uses: docker/login-action@v1
       with:

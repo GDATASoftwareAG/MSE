@@ -68,31 +68,31 @@ namespace SampleExchangeApi.Console_Test
         {
             try
             {
-                Directory.CreateDirectory($"{Configuration["Storage:Path"]}/13/1f");
-                Directory.CreateDirectory($"{Configuration["Storage:Path"]}/cd/a0");
+                Directory.CreateDirectory($"{Configuration["Storage:Path"]}/c7/9a");
+                Directory.CreateDirectory($"{Configuration["Storage:Path"]}/58/8b");
             }
             catch (Exception)
             {
                 // ignored
             }
 
-            var eicar = "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*\n";
-            var eicarZwei = "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*\nDIE ZWEITE\n";
+            var fileContent1 = "lfhaerlghseargherghserligesrg";
+            var fileContent2 = "reglehrger45u9pewrfgadlkjgfsfdfsdf234";
 
             using (var file =
                 File.Create(
-                    $"{Configuration["Storage:Path"]}/13/1f/131f95c51cc819465fa1797f6ccacf9d494aaaff46fa3eac73ae63ffbdfd8267")
+                    $"{Configuration["Storage:Path"]}/c7/9a/c79a962e9dc9f4251fd2bf4398d4676b36ed8814c46c0807bf68f466652b35d0")
             )
             {
-                file.Write(Encoding.ASCII.GetBytes(eicar), 0, eicar.Length);
+                file.Write(Encoding.ASCII.GetBytes(fileContent1), 0, fileContent1.Length);
             }
 
             using (var file =
                 File.Create(
-                    $"{Configuration["Storage:Path"]}/cd/a0/cda0a81901ced9306d023500ff1c383d6b4bd8cebefa886faa2a627a796e87f")
+                    $"{Configuration["Storage:Path"]}/58/8b/588b719918e06e13a73744dff033ff77e4c076f6c8f0733ce453549aed518aa4")
             )
             {
-                file.Write(Encoding.ASCII.GetBytes(eicarZwei), 0, eicar.Length);
+                file.Write(Encoding.ASCII.GetBytes(fileContent2), 0, fileContent2.Length);
             }
         }
 
@@ -113,8 +113,8 @@ namespace SampleExchangeApi.Console_Test
             mongoCollection.InsertOne(
                 new ExportSample
                 {
-                    Sha256SampleSet = "131f95c51cc819465fa1797f6ccacf9d494aaaff46fa3eac73ae63ffbdfd8267:Classic",
-                    Sha256 = "131f95c51cc819465fa1797f6ccacf9d494aaaff46fa3eac73ae63ffbdfd8267",
+                    Sha256SampleSet = "c79a962e9dc9f4251fd2bf4398d4676b36ed8814c46c0807bf68f466652b35d0:Classic",
+                    Sha256 = "c79a962e9dc9f4251fd2bf4398d4676b36ed8814c46c0807bf68f466652b35d0",
                     DoNotUseBefore = DateTime.Now.AddHours(-12),
                     Imported = DateTime.Now.AddDays(-1),
                     Platform = "DOS",
@@ -123,8 +123,8 @@ namespace SampleExchangeApi.Console_Test
             mongoCollection.InsertOne(
                 new ExportSample
                 {
-                    Sha256SampleSet = "cda0a81901ced9306d023500ff1c383d6b4bd8cebefa886faa2a627a796e87f:Classic",
-                    Sha256 = "cda0a81901ced9306d023500ff1c383d6b4bd8cebefa886faa2a627a796e87f",
+                    Sha256SampleSet = "588b719918e06e13a73744dff033ff77e4c076f6c8f0733ce453549aed518aa4:Classic",
+                    Sha256 = "588b719918e06e13a73744dff033ff77e4c076f6c8f0733ce453549aed518aa4",
                     DoNotUseBefore = DateTime.Now.AddDays(4),
                     Imported = DateTime.Now.AddDays(-1),
                     Platform = "DOS",
@@ -193,14 +193,11 @@ namespace SampleExchangeApi.Console_Test
                     null, "eltesto");
 
             var deserializedToken = new JwtBuilder()
-                .WithAlgorithm(new HMACSHA512Algorithm()) // symmetric
+                .WithAlgorithm(new HMACSHA512Algorithm())
                 .WithSecret(Configuration["Token:Secret"])
                 .MustVerifySignature()
                 .Decode<IDictionary<string, object> > (tokens[0]._Token);
 
-
-            //var deserializedToken = jwtBuilder.Decode<IDictionary<string, object>>(tokens[0]._Token, Configuration["Token:Secret"], verify: true);
-            
             var sha256FromToken = deserializedToken["sha256"].ToString();
             var partnerFromToken = deserializedToken["partner"].ToString();
             var filesizeFromToken = long.Parse(deserializedToken["filesize"].ToString());
@@ -212,9 +209,8 @@ namespace SampleExchangeApi.Console_Test
                         .Get(sha256FromToken, partnerFromToken, "eltesto").FileStream));
             }
 
-           // Assert.Single(tokens.Result);
-            Assert.Equal("131f95c51cc819465fa1797f6ccacf9d494aaaff46fa3eac73ae63ffbdfd8267", sha256String);
-            Assert.Equal(69,filesizeFromToken);
+            Assert.Equal("c79a962e9dc9f4251fd2bf4398d4676b36ed8814c46c0807bf68f466652b35d0", sha256String);
+            Assert.Equal(29,filesizeFromToken);
         }
     }
 }
