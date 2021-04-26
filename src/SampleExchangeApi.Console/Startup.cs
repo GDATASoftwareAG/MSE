@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace SampleExchangeApi.Console
 {
@@ -26,6 +27,9 @@ namespace SampleExchangeApi.Console
                     var item = new StringEnumConverter {NamingStrategy = new CamelCaseNamingStrategy()};
                     opts.SerializerSettings.Converters.Add(item);
                 });
+
+            // Add OpenAPI generator
+            services.AddSwaggerGen();
         }
 
         public void Configure(IApplicationBuilder app)
@@ -36,6 +40,13 @@ namespace SampleExchangeApi.Console
 
             if (_hostingEnv.IsDevelopment())
                 app.UseDeveloperExceptionPage();
+
+            app.UseSwagger();
+
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Malware Sample Exchange");
+            });
         }
     }
 }

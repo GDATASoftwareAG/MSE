@@ -54,6 +54,10 @@ Now you can start up Exchange API by changing to directory `./src/SampleExchange
  If after checking that the sample is not already part of your collection and you have interest in the reported platform,
  you can download it with ```curl -X GET -k "http://localhost:8080/v1/download?token=$PUT_TOKEN_HERE"```.
 
+## HTTP API
+
+
+
 ## Build and Release
 
 A GitHub action builds on every push and pull request. A new Docker image will be pushed to the Docker Hub.
