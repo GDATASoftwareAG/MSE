@@ -49,7 +49,6 @@ namespace SampleExchangeApi.Console.Controllers
         {
             var partner = string.Empty;
 
-            var correlationToken = Guid.NewGuid().ToString();
             try
             {
                 var deserializedToken = new JwtBuilder()
@@ -59,7 +58,7 @@ namespace SampleExchangeApi.Console.Controllers
                 var sha256 = deserializedToken["sha256"].ToString();
                 partner = deserializedToken["partner"].ToString();
 
-                return _sampleGetter.Get(sha256, partner, correlationToken);
+                return _sampleGetter.Get(sha256, partner);
             }
             catch (SecurityTokenExpiredException tokenExpiredException)
             {

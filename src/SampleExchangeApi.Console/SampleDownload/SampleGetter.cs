@@ -10,7 +10,7 @@ namespace SampleExchangeApi.Console.SampleDownload
 {
     public interface ISampleGetter
     {
-        FileStreamResult Get(string sha256, string partner, string correlationToken);
+        FileStreamResult Get(string sha256, string partner);
     }
     
     public class SampleGetter : ISampleGetter
@@ -24,7 +24,7 @@ namespace SampleExchangeApi.Console.SampleDownload
             _storagePath = configuration["Storage:Path"];
         }
 
-        public FileStreamResult Get(string sha256, string partner, string correlationToken)
+        public FileStreamResult Get(string sha256, string partner)
         {
             _logger.LogInformation(JsonConvert.SerializeObject(new DeliverSampleOutput
             {
@@ -32,7 +32,7 @@ namespace SampleExchangeApi.Console.SampleDownload
                 Partner = partner
             }));
 
-            var pathPartSha256 = sha256.ToString().ToLower();
+            var pathPartSha256 = sha256.ToLower();
             var pathPartOne = pathPartSha256.Substring(0, 2);
             var pathPartTwo = pathPartSha256.Substring(2, 2);
             var filename =
