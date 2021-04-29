@@ -52,7 +52,7 @@ you can download it with:
 curl -X GET -k "http://localhost:8080/v1/download?token=$PUT_TOKEN_HERE"
 ```
 
-Not authentication is needed for the download, as the [JWT](https://jwt.io/) is signed and as such authenticates the request.
+No authentication is needed for the download, as the [JWT](https://jwt.io/) is signed and as such authenticates the request.
 
 The list-endpoints returns a list of Json data structure which contains a JTW for each sample. How a JWT is decoded is shown below.
 
