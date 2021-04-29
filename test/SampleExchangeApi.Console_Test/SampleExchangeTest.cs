@@ -27,6 +27,7 @@ namespace SampleExchangeApi.Console_Test
         private static readonly IConfiguration Configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json")
+            .AddEnvironmentVariables()
             .Build();
 
         private static readonly ILogger Logger = LoggerFactory.Create(builder =>
@@ -50,18 +51,6 @@ namespace SampleExchangeApi.Console_Test
                 .Build();
 
             return deserializer.Deserialize<Settings>(input);
-        }
-
-        private static string HexStringFromBytes(IEnumerable<byte> bytes)
-        {
-            var sb = new StringBuilder();
-            foreach (var b in bytes)
-            {
-                var hex = b.ToString("x2");
-                sb.Append(hex);
-            }
-
-            return sb.ToString();
         }
 
         private static void CreateTestFile()
@@ -172,7 +161,7 @@ namespace SampleExchangeApi.Console_Test
                 GetShareConfig());
 
             Assert.True(listRequester
-                .AreCredentialsOkay("GanzTollerTauschPartner", "test123", "eltesto"));
+                .AreCredentialsOkay("partner2", "test123", "eltesto"));
         }
 
         [Fact]
@@ -189,7 +178,7 @@ namespace SampleExchangeApi.Console_Test
             CreateTestFile();
 
             var tokens = await listRequester
-                .RequestListAsync("GanzTollerTauschPartner", DateTime.Now.AddDays(-7),
+                .RequestListAsync("partner2", DateTime.Now.AddDays(-7),
                     null, "eltesto");
 
             var deserializedToken = new JwtBuilder()
@@ -204,9 +193,9 @@ namespace SampleExchangeApi.Console_Test
 
             using (var sha256 = SHA256.Create())
             {
-                sha256String = HexStringFromBytes(sha256
+                sha256String = Convert.ToHexString(sha256
                     .ComputeHash(sampleGetter
-                        .Get(sha256FromToken, partnerFromToken, "eltesto").FileStream));
+                        .Get(sha256FromToken, partnerFromToken).FileStream)).ToLower();
             }
 
             Assert.Equal("c79a962e9dc9f4251fd2bf4398d4676b36ed8814c46c0807bf68f466652b35d0", sha256String);

@@ -20,6 +20,7 @@ namespace SampleExchangeApi.Console
         private static readonly IConfiguration Config = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json")
+            .AddEnvironmentVariables()
             .Build();
 
         private static readonly ILogger Logger = LoggerFactory.Create(builder =>
@@ -34,7 +35,7 @@ namespace SampleExchangeApi.Console
             
             WebHost.CreateDefaultBuilder(args)
                 .UseStartup<Startup>()
-                .ConfigureServices((services) =>
+                .ConfigureServices(services =>
                 {
                     services.AddSingleton(GetShareConfig());
                     services.AddSingleton<IMongoClient>(new MongoClient(Config["MongoDb:ConnectionString"]));
