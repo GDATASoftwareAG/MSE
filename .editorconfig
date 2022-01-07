@@ -1,0 +1,20 @@
+root = true
+
+[*]
+indent_style = space
+end_of_line = lf
+charset = utf-8
+insert_final_newline = true
+max_line_length = 120
+
+[*.xml]
+indent_size = 4
+
+[*.cs]
+indent_size = 4
+csharp_style_namespace_declarations = file_scoped:warning
+csharp_prefer_braces = true:warning
+
+[*.json]
+indent_size = 2
+insert_final_newline = false
