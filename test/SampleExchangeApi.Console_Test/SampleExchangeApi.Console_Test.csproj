@@ -4,7 +4,7 @@
     <RootNamespace>SampleExchangeApi.Console_Test</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Ductus.FluentDocker" Version="2.10.6" />
+    <PackageReference Include="Ductus.FluentDocker" Version="2.10.44" />
     <PackageReference Include="Google.Protobuf" Version="3.19.2" />
     <PackageReference Include="Google.Protobuf.Tools" Version="3.15.8" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
