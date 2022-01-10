@@ -1,10 +1,9 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 
-namespace SampleExchangeApi.Console.Models
+namespace SampleExchangeApi.Console.Models;
+
+public class DeliverSampleOutput
 {
-    public class DeliverSampleOutput
-    {
-        [JsonProperty("sha256")] public string Sha256;
-        [JsonProperty("partner")] public string Partner;
-    }
+    [JsonProperty("sha256")] public string Sha256;
+    [JsonProperty("partner")] public string Partner;
 }

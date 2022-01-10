@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
@@ -13,61 +13,60 @@ using SampleExchangeApi.Console.SampleDownload;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-namespace SampleExchangeApi.Console
+namespace SampleExchangeApi.Console;
+
+public static class Program
 {
-    public static class Program
+    private static readonly IConfiguration Config = new ConfigurationBuilder()
+        .SetBasePath(Directory.GetCurrentDirectory())
+        .AddJsonFile("appsettings.json")
+        .AddEnvironmentVariables()
+        .Build();
+
+    private static readonly ILogger Logger = LoggerFactory.Create(builder =>
     {
-        private static readonly IConfiguration Config = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json")
-            .AddEnvironmentVariables()
-            .Build();
+        builder.AddConsole();
+        builder.AddFilter("Logger", LogLevel.Information);
+    }).CreateLogger("Logger");
 
-        private static readonly ILogger Logger = LoggerFactory.Create(builder =>
-        {
-            builder.AddConsole();
-            builder.AddFilter("Logger", LogLevel.Information);
-        }).CreateLogger("Logger");
+    public static void Main(string[] args)
+    {
+        Logger.LogInformation("Service Start.");
 
-        public static void Main(string[] args)
+        WebHost.CreateDefaultBuilder(args)
+            .UseStartup<Startup>()
+            .ConfigureServices(services =>
+            {
+                services.AddSingleton(GetShareConfig());
+                services.AddSingleton<IMongoClient>(new MongoClient(Config["MongoDb:ConnectionString"]));
+                services.AddSingleton(Logger);
+                services.AddTransient<IListRequester, ListRequester.ListRequester>();
+                services.AddTransient<ISampleGetter, SampleGetter>();
+                services.AddTransient<ISampleMetadataReader, MongoMetadataReader>();
+            })
+            .UseUrls(Config["Communication:REST:URL"])
+            .Build()
+            .Run();
+    }
+
+    private static Settings GetShareConfig()
+    {
+        try
         {
-            Logger.LogInformation("Service Start.");
-            
-            WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>()
-                .ConfigureServices(services =>
-                {
-                    services.AddSingleton(GetShareConfig());
-                    services.AddSingleton<IMongoClient>(new MongoClient(Config["MongoDb:ConnectionString"]));
-                    services.AddSingleton(Logger);
-                    services.AddTransient<IListRequester, ListRequester.ListRequester>();
-                    services.AddTransient<ISampleGetter, SampleGetter>();
-                    services.AddTransient<ISampleMetadataReader, MongoMetadataReader>();
-                })
-                .UseUrls(Config["Communication:REST:URL"])
-                .Build()
-                .Run();
+            var document = File.ReadAllText(Config["Config:YAML"]);
+            var input = new StringReader(document);
+
+            var deserializer = new DeserializerBuilder()
+                .WithNamingConvention(PascalCaseNamingConvention.Instance)
+                .Build();
+
+            return deserializer.Deserialize<Settings>(input);
         }
-
-        private static Settings GetShareConfig()
+        catch (Exception e)
         {
-            try
-            {
-                var document = File.ReadAllText(Config["Config:YAML"]);
-                var input = new StringReader(document);
-
-                var deserializer = new DeserializerBuilder()
-                    .WithNamingConvention(PascalCaseNamingConvention.Instance)
-                    .Build();
-
-                return deserializer.Deserialize<Settings>(input);
-            }
-            catch (Exception e)
-            {
-                Logger.LogError(e.ToString());
-                Environment.Exit(1);
-                return null;
-            }
+            Logger.LogError(e.ToString());
+            Environment.Exit(1);
+            return null;
         }
     }
 }

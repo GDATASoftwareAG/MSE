@@ -5,53 +5,52 @@ using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Services;
 using Xunit;
 
-namespace SampleExchangeApi.Console_Test
+namespace SampleExchangeApi.Console_Test;
+
+[CollectionDefinition("DockerContainerCollection")]
+public class DatabaseCollection : ICollectionFixture<DockerFixture>
 {
-    [CollectionDefinition("DockerContainerCollection")]
-    public class DatabaseCollection : ICollectionFixture<DockerFixture>
+    // This class has no code, and is never created. Its purpose is simply
+    // to be the place to apply [CollectionDefinition] and all the
+    // ICollectionFixture<> interfaces.
+}
+
+[SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+public class DockerFixture : IDisposable
+{
+    private IContainerService _container;
+    public readonly string IpAddress;
+
+    public DockerFixture()
     {
-        // This class has no code, and is never created. Its purpose is simply
-        // to be the place to apply [CollectionDefinition] and all the
-        // ICollectionFixture<> interfaces.
+        IpAddress = StartMongoDbContainer();
     }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
-    public class DockerFixture : IDisposable
+    private string StartMongoDbContainer()
     {
-        private IContainerService _container;
-        public readonly string IpAddress;
+        _container =
+            new Builder().UseContainer()
+                .UseImage("mongo:xenial")
+                .ExposePort(27017, 27017)
+                .Build()
+                .Start();
 
-        public DockerFixture()
-        {
-            IpAddress = StartMongoDbContainer();
-        }
+        var containerIp = "127.0.0.1";
 
-        private string StartMongoDbContainer()
-        {
-            _container =
-                new Builder().UseContainer()
-                    .UseImage("mongo:xenial")
-                    .ExposePort(27017, 27017)
-                    .Build()
-                    .Start();
+        Environment.SetEnvironmentVariable("MongoDb__ConnectionString", $"mongodb://{containerIp}:27017");
 
-            var containerIp = "127.0.0.1";
+        Thread.Sleep(10000);
+        return containerIp;
+    }
 
-            Environment.SetEnvironmentVariable("MongoDb__ConnectionString", $"mongodb://{containerIp}:27017");
+    private static void StopDockerContainer(IService container)
+    {
+        container.Stop();
+        container.Remove();
+    }
 
-            Thread.Sleep(10000);
-            return containerIp;
-        }
-
-        private static void StopDockerContainer(IService container)
-        {
-            container.Stop();
-            container.Remove();
-        }
-
-        public void Dispose()
-        {
-            StopDockerContainer(_container);
-        }
+    public void Dispose()
+    {
+        StopDockerContainer(_container);
     }
 }

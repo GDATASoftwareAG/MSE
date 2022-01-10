@@ -12,90 +12,89 @@ using SampleExchangeApi.Console.Models;
 using SampleExchangeApi.Console.SampleDownload;
 using Microsoft.IdentityModel.Tokens;
 
-namespace SampleExchangeApi.Console.Controllers
+namespace SampleExchangeApi.Console.Controllers;
+
+/// <inheritdoc />
+/// <summary>
+/// </summary>
+public sealed class SampleApiController : ControllerBase
 {
-    /// <inheritdoc />
+    private readonly ISampleGetter _sampleGetter;
+    private readonly ILogger _logger;
+    private readonly IConfiguration _configuration;
+
     /// <summary>
+    /// 
     /// </summary>
-    public sealed class SampleApiController : ControllerBase
+    /// <param name="sampleGetter"></param>
+    /// <param name="logger"></param>
+    /// <param name="configuration"></param>
+    public SampleApiController(ISampleGetter sampleGetter, ILogger logger, IConfiguration configuration)
     {
-        private readonly ISampleGetter _sampleGetter;
-        private readonly ILogger _logger;
-        private readonly IConfiguration _configuration;
+        _sampleGetter = sampleGetter;
+        _logger = logger;
+        _configuration = configuration;
+    }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="sampleGetter"></param>
-        /// <param name="logger"></param>
-        /// <param name="configuration"></param>
-        public SampleApiController(ISampleGetter sampleGetter, ILogger logger, IConfiguration configuration)
+    /// <summary>
+    /// Download sample
+    /// </summary>
+    /// <param name="token">download</param>
+    /// <response code="200">The Sample</response>
+    /// <response code="0">unexpected error</response>
+    [HttpGet]
+    [Route("/v1/download")]
+    [ValidateModelState]
+    public IActionResult DownloadSample([FromQuery][Required()] string token)
+    {
+        var partner = string.Empty;
+
+        try
         {
-            _sampleGetter = sampleGetter;
-            _logger = logger;
-            _configuration = configuration;
+            var deserializedToken = new JwtBuilder()
+                .WithSecret(_configuration["Token:Secret"])
+                .MustVerifySignature()
+                .Decode<IDictionary<string, object>>(token);
+            var sha256 = deserializedToken["sha256"].ToString();
+            partner = deserializedToken["partner"].ToString();
+
+            return _sampleGetter.Get(sha256, partner);
         }
-
-        /// <summary>
-        /// Download sample
-        /// </summary>
-        /// <param name="token">download</param>
-        /// <response code="200">The Sample</response>
-        /// <response code="0">unexpected error</response>
-        [HttpGet]
-        [Route("/v1/download")]
-        [ValidateModelState]
-        public IActionResult DownloadSample([FromQuery][Required()] string token)
+        catch (SecurityTokenExpiredException tokenExpiredException)
         {
-            var partner = string.Empty;
-
-            try
+            _logger.LogWarning(tokenExpiredException, $"Token {token} expired.");
+            return StatusCode(401, new Error
             {
-                var deserializedToken = new JwtBuilder()
-                    .WithSecret(_configuration["Token:Secret"])
-                    .MustVerifySignature()
-                    .Decode<IDictionary<string, object>>(token);
-                var sha256 = deserializedToken["sha256"].ToString();
-                partner = deserializedToken["partner"].ToString();
-
-                return _sampleGetter.Get(sha256, partner);
-            }
-            catch (SecurityTokenExpiredException tokenExpiredException)
+                Code = 401,
+                Message = "The token is expired."
+            });
+        }
+        catch (FormatException formatException)
+        {
+            _logger.LogError(formatException, $"Bad format. Token: {token}!");
+            return StatusCode(400, new Error
             {
-                _logger.LogWarning(tokenExpiredException, $"Token {token} expired.");
-                return StatusCode(401, new Error
-                {
-                    Code = 401,
-                    Message = "The token is expired."
-                });
-            }
-            catch (FormatException formatException)
+                Code = 400,
+                Message = "Bad request."
+            });
+        }
+        catch (FileNotFoundException fileNotFoundException)
+        {
+            _logger.LogError(fileNotFoundException, $"File not found. Token: {token}!");
+            return StatusCode(404, new Error
             {
-                _logger.LogError(formatException, $"Bad format. Token: {token}!");
-                return StatusCode(400, new Error
-                {
-                    Code = 400,
-                    Message = "Bad request."
-                });
-            }
-            catch (FileNotFoundException fileNotFoundException)
+                Code = 404,
+                Message = "File not found."
+            });
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, $"Something went wrong. Partner \"{partner}\" got an 500.");
+            return StatusCode(500, new Error
             {
-                _logger.LogError(fileNotFoundException, $"File not found. Token: {token}!");
-                return StatusCode(404, new Error
-                {
-                    Code = 404,
-                    Message = "File not found."
-                });
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, $"Something went wrong. Partner \"{partner}\" got an 500.");
-                return StatusCode(500, new Error
-                {
-                    Code = 500,
-                    Message = "We encountered an error while processing the request."
-                });
-            }
+                Code = 500,
+                Message = "We encountered an error while processing the request."
+            });
         }
     }
 }

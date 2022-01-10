@@ -3,75 +3,92 @@ using System.Runtime.Serialization;
 using System.Text;
 using Newtonsoft.Json;
 
-namespace SampleExchangeApi.Console.Models
+namespace SampleExchangeApi.Console.Models;
+
+[DataContract]
+public partial class Sample : IEquatable<Sample>
 {
-    [DataContract]
-    public partial class Sample : IEquatable<Sample>
+    [DataMember(Name = "Sample")]
+    public string _Sample { get; set; }
+
+    public override string ToString()
     {
-        [DataMember(Name = "Sample")]
-        public string _Sample { get; set; }
+        var sb = new StringBuilder();
+        sb.Append("class Sample {\n");
+        sb.Append("  _Sample: ").Append(_Sample).Append("\n");
+        sb.Append("}\n");
+        return sb.ToString();
+    }
 
-        public override string ToString()
+    public string ToJson()
+    {
+        return JsonConvert.SerializeObject(this, Formatting.Indented);
+    }
+
+    public override bool Equals(object obj)
+    {
+        if (obj is null)
         {
-            var sb = new StringBuilder();
-            sb.Append("class Sample {\n");
-            sb.Append("  _Sample: ").Append(_Sample).Append("\n");
-            sb.Append("}\n");
-            return sb.ToString();
+            return false;
         }
 
-        public string ToJson()
+        if (ReferenceEquals(this, obj))
         {
-            return JsonConvert.SerializeObject(this, Formatting.Indented);
+            return true;
         }
 
-        public override bool Equals(object obj)
+        return obj.GetType() == GetType() && Equals((Sample)obj);
+    }
+
+    public bool Equals(Sample other)
+    {
+        if (other is null)
         {
-            if (obj is null) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            return obj.GetType() == GetType() && Equals((Sample) obj);
+            return false;
         }
 
-        public bool Equals(Sample other)
+        if (ReferenceEquals(this, other))
         {
-            if (other is null) return false;
-            if (ReferenceEquals(this, other)) return true;
-
-            return
-            (
-                _Sample == other._Sample ||
-                _Sample != null &&
-                _Sample.Equals(other._Sample)
-            );
+            return true;
         }
 
-        public override int GetHashCode()
+        return
+        (
+            _Sample == other._Sample ||
+            _Sample != null &&
+            _Sample.Equals(other._Sample)
+        );
+    }
+
+    public override int GetHashCode()
+    {
+        unchecked // Overflow is fine, just wrap
         {
-            unchecked // Overflow is fine, just wrap
+            var hashCode = 41;
+            if (_Sample != null)
             {
-                var hashCode = 41;
-                if (_Sample != null)
-                    hashCode = hashCode * 59 + _Sample.GetHashCode();
-                return hashCode;
+                hashCode = hashCode * 59 + _Sample.GetHashCode();
             }
-        }
 
-        #region Operators
+            return hashCode;
+        }
+    }
+
+    #region Operators
 
 #pragma warning disable 1591
 
-        public static bool operator ==(Sample left, Sample right)
-        {
-            return Equals(left, right);
-        }
+    public static bool operator ==(Sample left, Sample right)
+    {
+        return Equals(left, right);
+    }
 
-        public static bool operator !=(Sample left, Sample right)
-        {
-            return !Equals(left, right);
-        }
+    public static bool operator !=(Sample left, Sample right)
+    {
+        return !Equals(left, right);
+    }
 
 #pragma warning restore 1591
 
-        #endregion Operators
-    }
+    #endregion Operators
 }

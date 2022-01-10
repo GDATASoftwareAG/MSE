@@ -6,36 +6,36 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace SampleExchangeApi.Console.Database.TempSampleDB
+namespace SampleExchangeApi.Console.Database.TempSampleDB;
+
+public class MongoMetadataReader : ISampleMetadataReader
 {
-    public class MongoMetadataReader : ISampleMetadataReader
+    private readonly IMongoCollection<ExportSample> _sampleCollection;
+    private readonly ILogger _logger;
+
+    public MongoMetadataReader(IConfiguration configuration, IMongoClient mongoClient, ILogger logger)
     {
-        private readonly IMongoCollection<ExportSample> _sampleCollection;
-        private readonly ILogger _logger;
+        _logger = logger;
 
-        public MongoMetadataReader(IConfiguration configuration, IMongoClient mongoClient, ILogger logger)
+        try
         {
-            _logger = logger;
-
-            try {
-                var mongoDatabase = mongoClient.GetDatabase(configuration["MongoDb:DatabaseName"]);
-                _sampleCollection = mongoDatabase.GetCollection<ExportSample>(configuration["MongoDb:CollectionName"]);
-            }
-            catch(Exception e)
-            {
-                _logger.LogError("Failed to open Mongodb collection.", e);
-            }
+            var mongoDatabase = mongoClient.GetDatabase(configuration["MongoDb:DatabaseName"]);
+            _sampleCollection = mongoDatabase.GetCollection<ExportSample>(configuration["MongoDb:CollectionName"]);
         }
-
-        public async Task<IEnumerable<ExportSample>> GetSamplesAsync(DateTime start, DateTime? end, string sampleSet)
+        catch (Exception e)
         {
-            var list = (end == null)
-                ? await _sampleCollection
-                    .FindAsync(_ => _.SampleSet == sampleSet && _.Imported >= start)
-                : await _sampleCollection
-                    .FindAsync(_ => _.SampleSet == sampleSet && _.Imported >= start && _.Imported <= end);
-
-            return list.ToList();
+            _logger.LogError("Failed to open Mongodb collection.", e);
         }
+    }
+
+    public async Task<IEnumerable<ExportSample>> GetSamplesAsync(DateTime start, DateTime? end, string sampleSet)
+    {
+        var list = (end == null)
+            ? await _sampleCollection
+                .FindAsync(_ => _.SampleSet == sampleSet && _.Imported >= start)
+            : await _sampleCollection
+                .FindAsync(_ => _.SampleSet == sampleSet && _.Imported >= start && _.Imported <= end);
+
+        return list.ToList();
     }
 }
