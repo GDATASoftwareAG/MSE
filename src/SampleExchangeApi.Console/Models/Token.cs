@@ -6,10 +6,10 @@ using Newtonsoft.Json;
 namespace SampleExchangeApi.Console.Models;
 
 [DataContract]
-public partial class Token : IEquatable<Token>
+public class Token : IEquatable<Token>
 {
     [DataMember(Name = "token")]
-    public string _Token { get; set; }
+    public string _Token { get; set; } = "";
     public override string ToString()
     {
         var sb = new StringBuilder();

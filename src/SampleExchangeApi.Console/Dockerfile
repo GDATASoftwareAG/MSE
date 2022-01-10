@@ -4,6 +4,8 @@ WORKDIR /data
 
 ENTRYPOINT dotnet /data/SampleExchangeApi.Console.dll
 
+ENV ASPNETCORE_URLS="http://0.0.0.0:80"
+
 LABEL org.opencontainers.image.title="Malware Sample Exchange (MSE) Image" \
       org.opencontainers.image.description="Malware Sample Exchange (MSE)" \
       org.opencontainers.image.url="https://github.com/GDATASoftwareAG/mse" \

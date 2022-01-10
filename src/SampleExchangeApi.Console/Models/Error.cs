@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 namespace SampleExchangeApi.Console.Models;
 
 [DataContract]
-public partial class Error : IEquatable<Error>
+public class Error : IEquatable<Error>
 {
     [Required]
     [DataMember(Name = "code")]
@@ -15,7 +15,7 @@ public partial class Error : IEquatable<Error>
 
     [Required]
     [DataMember(Name = "message")]
-    public string Message { get; set; }
+    public string Message { get; set; } = "";
 
     public override string ToString()
     {

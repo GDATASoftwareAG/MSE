@@ -25,7 +25,7 @@ public class ValidateModelStateAttribute : ActionFilterAttribute
         {
             foreach (var parameter in descriptor.MethodInfo.GetParameters())
             {
-                object args = null;
+                object? args = null;
                 if (context.ActionArguments.ContainsKey(parameter.Name))
                 {
                     args = context.ActionArguments[parameter.Name];

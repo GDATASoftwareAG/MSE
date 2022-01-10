@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using JWT.Builder;
 using Microsoft.Extensions.Configuration;

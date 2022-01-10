@@ -5,26 +5,26 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace SampleExchangeApi.Console.Database.TempSampleDB;
 
 public class MongoMetadataReader : ISampleMetadataReader
 {
     private readonly IMongoCollection<ExportSample> _sampleCollection;
-    private readonly ILogger _logger;
 
-    public MongoMetadataReader(IConfiguration configuration, IMongoClient mongoClient, ILogger logger)
+    public MongoMetadataReader(ILogger<MongoMetadataReader> logger, IOptions<MongoMetadataOptions> options)
     {
-        _logger = logger;
-
         try
         {
-            var mongoDatabase = mongoClient.GetDatabase(configuration["MongoDb:DatabaseName"]);
-            _sampleCollection = mongoDatabase.GetCollection<ExportSample>(configuration["MongoDb:CollectionName"]);
+            var mongoClient = new MongoClient(options.Value.ConnectionString);
+            var mongoDatabase = mongoClient.GetDatabase(options.Value.DatabaseName);
+            _sampleCollection = mongoDatabase.GetCollection<ExportSample>(options.Value.CollectionName);
         }
         catch (Exception e)
         {
-            _logger.LogError("Failed to open Mongodb collection.", e);
+            logger.LogError(e, "Failed to open Mongodb collection.");
+            throw;
         }
     }
 

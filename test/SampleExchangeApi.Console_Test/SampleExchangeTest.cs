@@ -17,6 +17,8 @@ using Xunit;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 using JWT.Algorithms;
+using Microsoft.Extensions.Options;
+using SampleExchangeApi.Console.Database;
 
 namespace SampleExchangeApi.Console_Test;
 
@@ -24,33 +26,16 @@ namespace SampleExchangeApi.Console_Test;
 public class SampleExchangeTest
 {
     private readonly DockerFixture _dockerFixture;
+
     private static readonly IConfiguration Configuration = new ConfigurationBuilder()
         .SetBasePath(Directory.GetCurrentDirectory())
         .AddJsonFile("appsettings.json")
         .AddEnvironmentVariables()
         .Build();
 
-    private static readonly ILogger Logger = LoggerFactory.Create(builder =>
-    {
-        builder.AddFilter("Logger", LogLevel.Information);
-        builder.AddConsole();
-    }).CreateLogger("Logger");
-
     public SampleExchangeTest(DockerFixture dockerFixture)
     {
         _dockerFixture = dockerFixture;
-    }
-
-    private static Settings GetShareConfig()
-    {
-        var document = File.ReadAllText(Configuration["Config:YAML"]);
-        var input = new StringReader(document);
-
-        var deserializer = new DeserializerBuilder()
-            .WithNamingConvention(PascalCaseNamingConvention.Instance)
-            .Build();
-
-        return deserializer.Deserialize<Settings>(input);
     }
 
     private static void CreateTestFile()
@@ -69,17 +54,17 @@ public class SampleExchangeTest
         var fileContent2 = "reglehrger45u9pewrfgadlkjgfsfdfsdf234";
 
         using (var file =
-            File.Create(
-                $"{Configuration["Storage:Path"]}/c7/9a/c79a962e9dc9f4251fd2bf4398d4676b36ed8814c46c0807bf68f466652b35d0")
-        )
+               File.Create(
+                   $"{Configuration["Storage:Path"]}/c7/9a/c79a962e9dc9f4251fd2bf4398d4676b36ed8814c46c0807bf68f466652b35d0")
+              )
         {
             file.Write(Encoding.ASCII.GetBytes(fileContent1), 0, fileContent1.Length);
         }
 
         using (var file =
-            File.Create(
-                $"{Configuration["Storage:Path"]}/58/8b/588b719918e06e13a73744dff033ff77e4c076f6c8f0733ce453549aed518aa4")
-        )
+               File.Create(
+                   $"{Configuration["Storage:Path"]}/58/8b/588b719918e06e13a73744dff033ff77e4c076f6c8f0733ce453549aed518aa4")
+              )
         {
             file.Write(Encoding.ASCII.GetBytes(fileContent2), 0, fileContent2.Length);
         }
@@ -131,12 +116,43 @@ public class SampleExchangeTest
             });
     }
 
+    private static PartnerProvider CreatePartnerProvider()
+    {
+        return new PartnerProvider(Mock.Of<ILogger<PartnerProvider>>(),
+            new OptionsWrapper<PartnerProviderOptions>(new PartnerProviderOptions
+            {
+                YAML = Configuration["Config:YAML"]
+            }));
+    }
+    private ISampleGetter CreateSampleGetter()
+    {
+        var options = new StorageOptions();
+        Configuration.GetSection("Storage").Bind(options);
+
+        var sampleGetter = new SampleGetter(Mock.Of<ILogger<SampleGetter>>(), new OptionsWrapper<StorageOptions>(options));
+        return sampleGetter;
+    }
+
+    private ListRequester CreateListRequester(ISampleMetadataReader? sampleMetadataReader = null)
+    {
+        sampleMetadataReader ??= Mock.Of<ISampleMetadataReader>();
+        var options = new ListRequesterOptions();
+        Configuration.GetSection("Token").Bind(options);
+        return new ListRequester(Mock.Of<ILogger<ListRequester>>(), new OptionsWrapper<ListRequesterOptions>(options), sampleMetadataReader,
+            CreatePartnerProvider(), CreateSampleGetter());
+    }
+    private MongoMetadataReader CreateMongoMetadataReader()
+    {
+        var options = new MongoMetadataOptions();
+        Configuration.GetSection("MongoDb").Bind(options);
+        options.ConnectionString = $"mongodb://{_dockerFixture.IpAddress}:27017";
+        return new MongoMetadataReader(Mock.Of<ILogger<MongoMetadataReader>>(), new OptionsWrapper<MongoMetadataOptions>(options));
+    }
+
     [Fact]
     public void AreCredentialsOkay_PartnerDoesNotExist_ReturnsFalse()
     {
-        var fakeMetaDataReader = new Mock<ISampleMetadataReader>();
-        var listRequester =
-            new ListRequester(Configuration, Logger, fakeMetaDataReader.Object, GetShareConfig());
+        var listRequester = CreateListRequester();
 
         Assert.False(listRequester
             .AreCredentialsOkay("ThisPartnerDoesNotExist", "FalschesPasswort", "eltesto"));
@@ -145,9 +161,7 @@ public class SampleExchangeTest
     [Fact]
     public void AreCredentialsOkay_PartnerDoesExistButWrongPassword_ReturnsFalse()
     {
-        var fakeMetaDataReader = new Mock<ISampleMetadataReader>();
-        var listRequester = new ListRequester(Configuration, Logger, fakeMetaDataReader.Object,
-            GetShareConfig());
+        var listRequester = CreateListRequester();
 
         Assert.False(listRequester
             .AreCredentialsOkay("netisee", "FalschesPasswort", "eltesto"));
@@ -156,9 +170,7 @@ public class SampleExchangeTest
     [Fact]
     public void AreCredentialsOkay_CredentialsAreOk_ReturnsTrue()
     {
-        var fakeMetaDataReader = new Mock<ISampleMetadataReader>();
-        var listRequester = new ListRequester(Configuration, Logger, fakeMetaDataReader.Object,
-            GetShareConfig());
+        var listRequester = CreateListRequester();
 
         Assert.True(listRequester
             .AreCredentialsOkay("partner2", "test123", "eltesto"));
@@ -169,10 +181,10 @@ public class SampleExchangeTest
     {
         string sha256String;
         var mongoClient = new MongoClient($"mongodb://{_dockerFixture.IpAddress}:27017");
-        var listRequester = new ListRequester(Configuration, Logger,
-            new MongoMetadataReader(Configuration, mongoClient, Logger), GetShareConfig());
+        var reader = CreateMongoMetadataReader();
+        var sampleGetter = CreateSampleGetter();
+        var listRequester = CreateListRequester(reader);
 
-        var sampleGetter = new SampleGetter(Configuration, Logger);
 
         WriteFakeDataIntoTestMongo(mongoClient);
         CreateTestFile();
@@ -201,4 +213,5 @@ public class SampleExchangeTest
         Assert.Equal("c79a962e9dc9f4251fd2bf4398d4676b36ed8814c46c0807bf68f466652b35d0", sha256String);
         Assert.Equal(29, filesizeFromToken);
     }
+
 }
