@@ -1,0 +1,11 @@
+FROM mcr.microsoft.com/dotnet/aspnet:6.0-alpine
+COPY . /data
+WORKDIR /data
+
+ENTRYPOINT dotnet /data/SampleExchangeApi.Console.dll
+
+LABEL org.opencontainers.image.title="Malware Sample Exchange (MSE) Image" \
+      org.opencontainers.image.description="Malware Sample Exchange (MSE)" \
+      org.opencontainers.image.url="https://github.com/GDATASoftwareAG/mse" \
+      org.opencontainers.image.source="https://github.com/GDATASoftwareAG/mse/tree/master/src/SampleExchangeApi.Console/" \
+      org.opencontainers.image.license="MIT"
