@@ -6,10 +6,10 @@ using Newtonsoft.Json;
 namespace SampleExchangeApi.Console.Models;
 
 [DataContract]
-public partial class Sample : IEquatable<Sample>
+public class Sample : IEquatable<Sample>
 {
     [DataMember(Name = "Sample")]
-    public string _Sample { get; set; }
+    public string _Sample { get; set; } = "";
 
     public override string ToString()
     {

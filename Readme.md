@@ -145,13 +145,7 @@ To configure the MSE itself, the [appsettings.json](./src/SampleExchangeApi.Cons
   },
   "Storage": {
     "Path": "/mnt/sampleexportstorage" // Path to the actual samples.
-  },
-  "Communication": {
-    "REST": {
-      "URL": "http://0.0.0.0:8080/" // Where the MSE itself exports its web-service
-    }
-  },
-  "TimeoutSeconds": 600 // Request timeout
+  }
 }
 ```
 All settings can be overwritten by **environment variables**. This is useful, if you want to run the Docker image directly of in Kubernetes, where editing the `appsettings.json` is not feasible.

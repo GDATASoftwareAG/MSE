@@ -8,18 +8,6 @@ namespace SampleExchangeApi.Console.ListRequester;
 
 public static class Sha256
 {
-    private const int SaltLengthLimit = 32;
-
-    public static byte[] GetSalt(int maximumSaltLength = SaltLengthLimit)
-    {
-        var salt = new byte[maximumSaltLength];
-        using (var random = new RNGCryptoServiceProvider())
-        {
-            random.GetNonZeroBytes(salt);
-        }
-
-        return salt;
-    }
 
     public static byte[] Hash(string value, IEnumerable<byte> salt)
     {
@@ -30,7 +18,7 @@ public static class Sha256
     {
         var saltedValue = value.Concat(salt).ToArray();
 
-        return new SHA256Managed().ComputeHash(saltedValue);
+        return SHA256.Create().ComputeHash(saltedValue);
     }
 
     public static string ByteArrayToString(byte[] byteArray)
