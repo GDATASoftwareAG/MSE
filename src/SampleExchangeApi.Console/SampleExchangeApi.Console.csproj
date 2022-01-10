@@ -4,7 +4,7 @@
     <Version>0.0.0</Version>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="JWT" Version="8.2.0" />
+    <PackageReference Include="JWT" Version="8.8.1" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="6.0.0" />
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="6.10.2" />
     <PackageReference Include="MongoDB.Driver" Version="2.12.2" />
