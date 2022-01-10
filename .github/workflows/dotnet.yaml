@@ -23,7 +23,6 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET
@@ -39,19 +38,51 @@ jobs:
     - name: Test
       run: dotnet test --no-restore --verbosity normal SampleExchangeApi.sln
 
-    # Run only if a tag with the format "*.*.*" is pushed.
-    - name: Build docker image
-      run: docker build -t gdatacyberdefense/sampleexchange:$RELEASE_VERSION .
-      if: startsWith(github.ref, 'refs/tags')
-    - name: Tag latest
-      run: docker tag gdatacyberdefense/sampleexchange:$RELEASE_VERSION gdatacyberdefense/sampleexchange:latest
-      if: startsWith(github.ref, 'refs/tags')
-    - name: Login to DockerHub
-      uses: docker/login-action@v1
+    - name: Publish
+      run: dotnet publish -v minimal -c Release --no-restore -o ./artifacts ./src/SampleExchangeApi.Console/SampleExchangeApi.Console.csproj
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v2
       with:
-        username: ${{ secrets.DOCKER_HUB_USER }} 
-        password: ${{ secrets.DOCKER_HUB_PASSWORD }}
-      if: startsWith(github.ref, 'refs/tags')
-    - name: Push docker image
-      run: docker push gdatacyberdefense/sampleexchange:$RELEASE_VERSION && docker push gdatacyberdefense/sampleexchange:latest
-      if: startsWith(github.ref, 'refs/tags')
+        name: artifacts
+        path: ./artifacts/*
+
+  build-image:
+    runs-on: ubuntu-latest
+    needs: build
+    if: startsWith(github.ref, 'refs/tags')
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v1
+        with:
+          name: artifacts
+      - name: Prepare
+        id: prep
+        run: |
+          DOCKER_IMAGE=ghcr.io/gdatasoftwareag/mse
+          VERSION=edge
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          elif [[ $GITHUB_REF == refs/heads/* ]]; then
+            VERSION=$(echo ${GITHUB_REF#refs/heads/} | sed -r 's#/+#-#g')
+          elif [[ $GITHUB_REF == refs/pull/* ]]; then
+            VERSION=pr-${{ github.event.number }}
+          fi
+          TAGS="${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:${VERSION}-${GITHUB_SHA::8}"
+          echo ::set-output name=version::${VERSION}
+          echo ::set-output name=tags::${TAGS}
+          echo ::set-output name=created::$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+      - name: Login to Github Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push to GitHub Packages
+        uses: docker/build-push-action@v2
+        with:
+          push: ${{ github.event_name == 'release' }}
+          context: ./artifacts
+          tags: ${{ steps.prep.outputs.tags }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ steps.prep.outputs.created }}
