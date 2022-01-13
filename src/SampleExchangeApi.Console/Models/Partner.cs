@@ -7,5 +7,6 @@ public class Partner
     public string Salt { get; set; } = "";
     public bool Enabled { get; set; }
     public string Sampleset { get; set; } = "";
+    public bool IncludeFamilyName { get; set; } = false;
 }
 
