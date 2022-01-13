@@ -27,6 +27,7 @@ public class PartnerProvider : IPartnerProvider
 
             var deserializer = new DeserializerBuilder()
                 .WithNamingConvention(PascalCaseNamingConvention.Instance)
+                .IgnoreUnmatchedProperties()
                 .Build();
 
             _partners = deserializer.Deserialize<Settings>(input).Partners ?? throw new ArgumentException("partners is not set");

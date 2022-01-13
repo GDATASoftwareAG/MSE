@@ -56,6 +56,8 @@ public class ListRequester : IListRequester
     public async Task<List<Token>> RequestListAsync(string username, DateTime start, DateTime? end,
         string correlationToken)
     {
+        var includeFamilyName = _partners.Single(_ => _.Name == username).IncludeFamilyName;
+
         var sampleSet = _partners.SingleOrDefault(_ => _.Name == username)?.Sampleset;
 
         IEnumerable<ExportSample> samples =
@@ -64,27 +66,38 @@ public class ListRequester : IListRequester
         var tokenCollectionBag = new ConcurrentBag<Token>();
         Parallel.ForEach(samples, new ParallelOptions { MaxDegreeOfParallelism = 8 }, sample =>
         {
-            if (sample.DoNotUseBefore <= DateTime.Now)
+            if (sample.DoNotUseBefore > DateTime.Now)
             {
-                var fileSize = sample.FileSize == 0
-                    ? _sampleGetter.GetFileSizeForSha256(sample.Sha256)
-                    : sample.FileSize;
-
-                if (fileSize > 0)
-                {
-                    tokenCollectionBag.Add(new Token
-                    {
-                        _Token = new JwtBuilder().WithAlgorithm(new HMACSHA512Algorithm())
-                            .WithSecret(_options.Secret)
-                            .AddClaim("exp", DateTimeOffset.UtcNow.AddSeconds(_options.Expiration)
-                                .ToUnixTimeSeconds())
-                            .AddClaim("sha256", sample.Sha256)
-                            .AddClaim("filesize", fileSize)
-                            .AddClaim("platform", sample.Platform)
-                            .AddClaim("partner", username).Encode()
-                    });
-                }
+                return;
             }
+
+            var fileSize = sample.FileSize == 0
+                ? _sampleGetter.GetFileSizeForSha256(sample.Sha256)
+                : sample.FileSize;
+
+            if (fileSize <= 0)
+            {
+                return;
+            }
+
+            var token = new JwtBuilder()
+                .WithAlgorithm(new HMACSHA512Algorithm())
+                .WithSecret(_options.Secret)
+                .AddClaim("exp", DateTimeOffset.UtcNow.AddSeconds(_options.Expiration)
+                    .ToUnixTimeSeconds())
+                .AddClaim("sha256", sample.Sha256)
+                .AddClaim("filesize", fileSize)
+                .AddClaim("platform", sample.Platform)
+                .AddClaim("partner", username);
+
+            if (includeFamilyName)
+            {
+                token.AddClaim("familyname", sample.FamilyName);
+            }
+            tokenCollectionBag.Add(new Token
+            {
+                _Token = token.Encode()
+            });
         });
         var tokens = tokenCollectionBag.ToList();
 

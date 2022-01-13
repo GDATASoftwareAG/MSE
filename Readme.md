@@ -179,12 +179,14 @@ Partners:
   Salt: 79b48cd1d1ed8fa129c58c5c2d0633b3f9d46087feb8b0165a5ed560356db894 # Password Salt
   Enabled: Yes # Is the exchange with the partner enabled?
   Sampleset: Classic # Which set it shared with the partner?
+  IncludeFamilyName: Yes # Allows to include a family into the token
 
 - Name: partner2
   Password: c5363549da9f03d8da44db70ec12ca5dce8078d4cb5fda1d7ecadd4372031539
   Salt: 8ec1690da1bf1baad62a20c0db8e4ad26205ec577b741ccc8b1e2e834670a5e4
   Enabled: No
   Sampleset: Extended
+  IncludeFamilyName: no
 ```
 
 The [main.py](./src/FillMongoWithTestData/main.py) is an example script, which show how the MongoDB is filled with samples to share. It does two things. First it moved the sample itself to the sample folder, as described above. Second, it inserts the needed meta-data for the sample into the MongoDB. This is all that is needed to be able to share the sample with a partner.
@@ -198,7 +200,7 @@ import datetime
 import os
 import sys, getopt
 
-def put_string_into_db(sha256, platform, file_size, sample_set, mongo_collection):
+def put_string_into_db(sha256, platform, file_size, sample_set, mongo_collection, family_name):
     current_iso_datetime = datetime.datetime.utcnow()
     entry = {
                 "_id": f"{sha256}:test",                  # Unique ID 
@@ -207,7 +209,8 @@ def put_string_into_db(sha256, platform, file_size, sample_set, mongo_collection
                 "Imported": current_iso_datetime,         # Date-time, when the sample was added
                 "FileSize": file_size,                    # File size in bytes
                 "DoNotUseBefore": current_iso_datetime,   # Do not share before this date-time
-                "SampleSet": sample_set                   # Which set the samples belongs to
+                "SampleSet": sample_set,                  # Which set the samples belongs to
+                "FamilyName": family_name                 # Custom FamilyName
             }
     mongo_collection.insert_one(entry)
 
@@ -253,9 +256,9 @@ def main(argv):
     sha256_1 = hash_string_and_save_to_file_in_folder(string_1, destination_folder)
     sha256_2 = hash_string_and_save_to_file_in_folder(string_2, destination_folder)
     sha256_3 = hash_string_and_save_to_file_in_folder(string_3, destination_folder)
-    put_string_into_db(sha256_1, "PDF", 12345, "test", mongo_collection)
-    put_string_into_db(sha256_2, "PE32", 67890, "test", mongo_collection)
-    put_string_into_db(sha256_3, "AND", 112233, "test", mongo_collection)
+    put_string_into_db(sha256_1, "PDF", 12345, "test", mongo_collection, "family2")
+    put_string_into_db(sha256_2, "PE32", 67890, "test", mongo_collection, "family1")
+    put_string_into_db(sha256_3, "AND", 112233, "test", mongo_collection, "family1")
 
 if __name__ == '__main__':
     main(sys.argv[1:])

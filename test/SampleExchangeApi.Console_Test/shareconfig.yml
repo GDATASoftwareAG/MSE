@@ -4,9 +4,18 @@ Partners:
   Salt: 79b48cd1d1ed8fa129c58c5c2d0633b3f9d46087feb8b0165a5ed560356db894
   Enabled: Yes
   Sampleset: Classic
+  IncludeFamilyName: No
 
 - Name: partner2
   Password: c5363549da9f03d8da44db70ec12ca5dce8078d4cb5fda1d7ecadd4372031539
   Salt: 8ec1690da1bf1baad62a20c0db8e4ad26205ec577b741ccc8b1e2e834670a5e4
   Enabled: Yes
   Sampleset: Classic
+  IncludeFamilyName: No
+
+- Name: partnerWithFamilyName
+  Password: c5363549da9f03d8da44db70ec12ca5dce8078d4cb5fda1d7ecadd4372031539
+  Salt: 8ec1690da1bf1baad62a20c0db8e4ad26205ec577b741ccc8b1e2e834670a5e4
+  Enabled: Yes
+  Sampleset: Classic
+  IncludeFamilyName: Yes

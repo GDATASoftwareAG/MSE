@@ -57,7 +57,7 @@ public sealed class SampleApiController : ControllerBase
             var sha256 = deserializedToken["sha256"].ToString();
             partner = deserializedToken["partner"].ToString();
 
-            return _sampleGetter.Get(sha256, partner);
+            return _sampleGetter.GetAsync(sha256, partner).GetAwaiter().GetResult();
         }
         catch (SecurityTokenExpiredException tokenExpiredException)
         {

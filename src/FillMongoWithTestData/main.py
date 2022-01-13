@@ -6,7 +6,7 @@ import datetime
 import os
 import sys, getopt
 
-def put_string_into_db(sha256, platform, file_size, sample_set, mongo_collection):
+def put_string_into_db(sha256, platform, file_size, sample_set, mongo_collection, family_name):
     current_iso_datetime = datetime.datetime.utcnow()
     entry = {
                 "_id": f"{sha256}:test",
@@ -15,7 +15,8 @@ def put_string_into_db(sha256, platform, file_size, sample_set, mongo_collection
                 "Imported": current_iso_datetime,
                 "FileSize": file_size,
                 "DoNotUseBefore": current_iso_datetime,
-                "SampleSet": sample_set
+                "SampleSet": sample_set,
+                "FamilyName": family_name
             }
     mongo_collection.insert_one(entry)
 
@@ -61,9 +62,9 @@ def main(argv):
     sha256_1 = hash_string_and_save_to_file_in_folder(string_1, destination_folder)
     sha256_2 = hash_string_and_save_to_file_in_folder(string_2, destination_folder)
     sha256_3 = hash_string_and_save_to_file_in_folder(string_3, destination_folder)
-    put_string_into_db(sha256_1, "PDF", 12345, "test", mongo_collection)
-    put_string_into_db(sha256_2, "PE32", 67890, "test", mongo_collection)
-    put_string_into_db(sha256_3, "AND", 112233, "test", mongo_collection)
+    put_string_into_db(sha256_1, "PDF", 12345, "test", mongo_collection, "family2")
+    put_string_into_db(sha256_2, "PE32", 67890, "test", mongo_collection, "family1")
+    put_string_into_db(sha256_3, "AND", 112233, "test", mongo_collection, "family1")
 
 if __name__ == '__main__':
     main(sys.argv[1:])

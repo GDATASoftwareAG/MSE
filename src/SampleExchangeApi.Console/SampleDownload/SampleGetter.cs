@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -11,7 +12,7 @@ namespace SampleExchangeApi.Console.SampleDownload;
 public interface ISampleGetter
 {
     long GetFileSizeForSha256(string sha256);
-    FileStreamResult Get(string sha256, string partner);
+    Task<FileStreamResult> GetAsync(string sha256, string partner);
 }
 
 public class SampleGetter : ISampleGetter
@@ -40,7 +41,7 @@ public class SampleGetter : ISampleGetter
         }
     }
 
-    public FileStreamResult Get(string sha256, string partner)
+    public Task<FileStreamResult> GetAsync(string sha256, string partner)
     {
         _logger.LogInformation(JsonConvert.SerializeObject(new DeliverSampleOutput
         {
@@ -51,9 +52,9 @@ public class SampleGetter : ISampleGetter
         var filename = GetPath(sha256);
         _logger.LogInformation($"Loading from: '{filename}' for partner {partner}!");
 
-        return new FileStreamResult(new FileStream(
+        return Task.FromResult(new FileStreamResult(new FileStream(
                 filename, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true),
-            "application/octet-stream");
+            "application/octet-stream"));
     }
 
     private string GetPath(string sha256)

@@ -3,6 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace SampleExchangeApi.Console.Models;
 
+[BsonIgnoreExtraElements]
 public class ExportSample
 {
     // ReSharper disable once UnusedAutoPropertyAccessor.Global
@@ -14,4 +15,5 @@ public class ExportSample
     public DateTime Imported { get; set; }
     public DateTime DoNotUseBefore { get; set; }
     public string SampleSet { get; set; } = "";
+    public string FamilyName { get; set; } = "";
 }
