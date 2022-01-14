@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using SampleExchangeApi.Console.Models;
 
@@ -8,7 +9,7 @@ namespace SampleExchangeApi.Console.Database.TempSampleDB;
 /// <summary>
 /// 
 /// </summary>
-public interface ISampleMetadataReader
+public interface ISampleMetadataHandler
 {
     /// <summary>
     /// 
@@ -17,5 +18,5 @@ public interface ISampleMetadataReader
     /// <param name="end"></param>
     /// <param name="sampleSet"></param>
     /// <returns></returns>
-    Task<IEnumerable<ExportSample>> GetSamplesAsync(DateTime start, DateTime? end, string sampleSet);
+    Task<IEnumerable<ExportSample>> GetSamplesAsync(DateTime start, DateTime? end, string sampleSet, CancellationToken token = default);
 }
