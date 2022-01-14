@@ -1,45 +1,46 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using SampleExchangeApi.Console.Attributes;
+using SampleExchangeApi.Console.Database;
 using SampleExchangeApi.Console.ListRequester;
 using SampleExchangeApi.Console.Models;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace SampleExchangeApi.Console.Controllers;
-
-/// <inheritdoc />
-public class LoginFailedException : Exception
-{
-};
 
 /// <inheritdoc />
 /// <summary>
 /// </summary>
 public sealed class TokensApiController : Controller
 {
-    private readonly ILogger _logger;
+    private readonly ILogger<TokensApiController> _logger;
     private readonly IListRequester _listRequester;
+    private readonly IPartnerProvider _partnerProvider;
 
     /// <summary>
     /// 
     /// </summary>
     /// <param name="logger"></param>
     /// <param name="listRequester"></param>
-    public TokensApiController(ILogger logger, IListRequester listRequester)
+    /// <param name="partnerProvider"></param>
+    public TokensApiController(ILogger<TokensApiController> logger, IListRequester listRequester, IPartnerProvider partnerProvider)
     {
         _logger = logger;
         _listRequester = listRequester;
+        _partnerProvider = partnerProvider;
     }
 
-    private string ValidateCredentialsAndReturnUsername(string authorizationHeaders, string correlationToken)
+    private string ValidateCredentialsAndReturnUsername(string authorizationHeaders)
     {
         if (string.IsNullOrEmpty(authorizationHeaders))
         {
-            _logger.LogWarning(correlationToken, $"No credentials given.");
+            _logger.LogWarning("No credentials given.");
             throw new LoginFailedException();
         }
 
@@ -50,7 +51,7 @@ public sealed class TokensApiController : Controller
         }
 
         var basicAuth = authorizationHeaders.Split(':');
-        if (_listRequester.AreCredentialsOkay(basicAuth[0], basicAuth[1], correlationToken))
+        if (_partnerProvider.AreCredentialsOkay(basicAuth[0], basicAuth[1]))
         {
             return basicAuth[0];
         }
@@ -64,28 +65,27 @@ public sealed class TokensApiController : Controller
     /// </summary>
     /// <param name="start">Start date for sample request range</param>
     /// <param name="end">(Default: today's date )</param>
-    /// <response code="503">Bad Gateway!</response>
-    /// <response code="401">Unauthorized!</response>
-    /// <response code="200">A list of samples as jwt</response>
-    /// <response code="0">unexpected error</response>
     [HttpGet]
     [Route("/v1/list")]
     [ValidateModelState]
-    public async Task<IActionResult> ListTokens([FromQuery][Required()] DateTime start, [FromQuery] DateTime? end)
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Start Date has to be before end date")]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Unauthorized!")]
+    [SwaggerResponse(StatusCodes.Status402PaymentRequired, "Start date cannot be older than 7 days")]
+    [SwaggerResponse(StatusCodes.Status500InternalServerError, "We encountered an error while processing the request")]
+    public async Task<IActionResult> ListTokens([FromQuery][Required] DateTime start, [FromQuery] DateTime? end, CancellationToken token = default)
     {
-        var correlationToken = Guid.NewGuid().ToString();
         try
         {
-            if (end != null)
+            var authorizationHeaders = Request.Headers["Authorization"].ToString();
+            var username = ValidateCredentialsAndReturnUsername(authorizationHeaders);
+
+            if (start >= end)
             {
-                if (start >= end)
+                return StatusCode(400, new Error
                 {
-                    return StatusCode(400, new Error
-                    {
-                        Code = 400,
-                        Message = "Start Date has to be before end date."
-                    });
-                }
+                    Code = 400,
+                    Message = "Start Date has to be before end date."
+                });
             }
 
             if (start < DateTime.Now.AddDays(-7))
@@ -96,15 +96,9 @@ public sealed class TokensApiController : Controller
                     Message = "Start date cannot be older than 7 days."
                 });
             }
-
             _logger.LogInformation("Incoming ListRequest");
 
-            var authorizationHeaders = Request.Headers["Authorization"].ToString();
-            var username = ValidateCredentialsAndReturnUsername(authorizationHeaders, correlationToken);
-
-            return new ObjectResult(
-                JsonConvert.SerializeObject(
-                    await _listRequester.RequestListAsync(username, start, end, correlationToken)));
+            return Ok(await _listRequester.RequestListAsync(username, start, end, token));
         }
         catch (LoginFailedException)
         {
@@ -112,10 +106,10 @@ public sealed class TokensApiController : Controller
         }
         catch (Exception e)
         {
-            _logger.LogError(e, $"Something went wrong. The Customer got an 502.");
-            return StatusCode(502, new Error
+            _logger.LogError(e, "Something went wrong. The Customer got an 500.");
+            return StatusCode(500, new Error
             {
-                Code = 502,
+                Code = 500,
                 Message = "We encountered an error while processing the request."
             });
         }

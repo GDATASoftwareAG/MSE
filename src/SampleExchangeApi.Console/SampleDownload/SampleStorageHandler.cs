@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -9,18 +10,12 @@ using SampleExchangeApi.Console.Models;
 
 namespace SampleExchangeApi.Console.SampleDownload;
 
-public interface ISampleGetter
+public class SampleStorageHandler : ISampleStorageHandler
 {
-    long GetFileSizeForSha256(string sha256);
-    Task<FileStreamResult> GetAsync(string sha256, string partner);
-}
-
-public class SampleGetter : ISampleGetter
-{
-    private readonly ILogger _logger;
+    private readonly ILogger<SampleStorageHandler> _logger;
     private readonly StorageOptions _options;
 
-    public SampleGetter(ILogger logger, IOptions<StorageOptions> options)
+    public SampleStorageHandler(ILogger<SampleStorageHandler> logger, IOptions<StorageOptions> options)
     {
         _logger = logger;
         _options = options.Value ?? throw new ArgumentNullException(nameof(options));
@@ -41,7 +36,7 @@ public class SampleGetter : ISampleGetter
         }
     }
 
-    public Task<FileStreamResult> GetAsync(string sha256, string partner)
+    public Task<FileStreamResult> GetAsync(string sha256, string partner, CancellationToken token = default)
     {
         _logger.LogInformation(JsonConvert.SerializeObject(new DeliverSampleOutput
         {

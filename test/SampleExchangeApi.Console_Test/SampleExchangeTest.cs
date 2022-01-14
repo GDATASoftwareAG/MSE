@@ -45,34 +45,30 @@ public class SampleExchangeTest
                 YAML = Configuration["Config:YAML"]
             }));
     }
-
-    private ISampleGetter CreateSampleGetter()
+    private ISampleStorageHandler CreateSampleGetter()
     {
         var options = new StorageOptions();
         Configuration.GetSection("Storage").Bind(options);
 
-        var sampleGetter =
-            new SampleGetter(Mock.Of<ILogger<SampleGetter>>(), new OptionsWrapper<StorageOptions>(options));
+        var sampleGetter = new SampleStorageHandler(Mock.Of<ILogger<SampleStorageHandler>>(), new OptionsWrapper<StorageOptions>(options));
         return sampleGetter;
     }
 
-    private ListRequester CreateListRequester(ISampleMetadataReader? sampleMetadataReader = null)
+    private ListRequester CreateListRequester(ISampleMetadataHandler? sampleMetadataReader = null)
     {
-        sampleMetadataReader ??= Mock.Of<ISampleMetadataReader>();
+        sampleMetadataReader ??= Mock.Of<ISampleMetadataHandler>();
         var options = new ListRequesterOptions();
         Configuration.GetSection("Token").Bind(options);
         return new ListRequester(Mock.Of<ILogger<ListRequester>>(), new OptionsWrapper<ListRequesterOptions>(options),
             sampleMetadataReader,
             CreatePartnerProvider(), CreateSampleGetter());
     }
-
-    private MongoMetadataReader CreateMongoMetadataReader()
+    private MongoMetadataHandler CreateMongoMetadataReader()
     {
         var options = new MongoMetadataOptions();
         Configuration.GetSection("MongoDb").Bind(options);
         options.ConnectionString = $"mongodb://{_dockerFixture.IpAddress}:27017";
-        return new MongoMetadataReader(Mock.Of<ILogger<MongoMetadataReader>>(),
-            new OptionsWrapper<MongoMetadataOptions>(options));
+        return new MongoMetadataHandler(Mock.Of<ILogger<MongoMetadataHandler>>(), new OptionsWrapper<MongoMetadataOptions>(options));
     }
 
     private static string HexStringFromBytes(IEnumerable<byte> bytes)
@@ -90,28 +86,28 @@ public class SampleExchangeTest
     [Fact]
     public void AreCredentialsOkay_PartnerDoesNotExist_ReturnsFalse()
     {
-        var listRequester = CreateListRequester();
+        var partnerProvider = CreatePartnerProvider();
 
-        Assert.False(listRequester
-            .AreCredentialsOkay("ThisPartnerDoesNotExist", "FalschesPasswort", "eltesto"));
+        Assert.False(partnerProvider
+            .AreCredentialsOkay("ThisPartnerDoesNotExist", "FalschesPasswort"));
     }
 
     [Fact]
     public void AreCredentialsOkay_PartnerDoesExistButWrongPassword_ReturnsFalse()
     {
-        var listRequester = CreateListRequester();
+        var partnerProvider = CreatePartnerProvider();
 
-        Assert.False(listRequester
-            .AreCredentialsOkay("netisee", "FalschesPasswort", "eltesto"));
+        Assert.False(partnerProvider
+            .AreCredentialsOkay("netisee", "FalschesPasswort"));
     }
 
     [Fact]
     public void AreCredentialsOkay_CredentialsAreOk_ReturnsTrue()
     {
-        var listRequester = CreateListRequester();
+        var partnerProvider = CreatePartnerProvider();
 
-        Assert.True(listRequester
-            .AreCredentialsOkay("partner2", "test123", "eltesto"));
+        Assert.True(partnerProvider
+            .AreCredentialsOkay("partner2", "test123"));
     }
 
     [Fact]
@@ -124,7 +120,7 @@ public class SampleExchangeTest
 
         var tokens = await listRequester
             .RequestListAsync("partner2", DateTime.Now.AddDays(-7),
-                null, "eltesto");
+                null);
 
         var deserializedToken = new JwtBuilder()
             .WithAlgorithm(new HMACSHA512Algorithm())
@@ -138,8 +134,8 @@ public class SampleExchangeTest
 
         using (var sha256 = SHA256.Create())
         {
-            sha256String = HexStringFromBytes(sha256
-                .ComputeHash(sampleGetter.GetAsync(sha256FromToken, partnerFromToken).GetAwaiter().GetResult().FileStream));
+            sha256String = HexStringFromBytes(await sha256
+                .ComputeHashAsync((await sampleGetter.GetAsync(sha256FromToken, partnerFromToken)).FileStream));
         }
 
         Assert.Single(tokens);
@@ -162,7 +158,7 @@ public class SampleExchangeTest
 
         var tokens = await listRequester
             .RequestListAsync("partnerWithFamilyName", DateTime.Now.AddDays(-7),
-                null, "eltesto");
+                null);
 
         var deserializedToken = jwtBuilder.Decode<IDictionary<string, object>>(tokens[0]._Token);
 
@@ -173,9 +169,9 @@ public class SampleExchangeTest
 
         using (var sha256 = SHA256.Create())
         {
-            sha256String = HexStringFromBytes(sha256
-                .ComputeHash(sampleGetter
-                    .GetAsync(sha256FromToken, partnerFromToken).Result.FileStream));
+            sha256String = HexStringFromBytes(await sha256
+                .ComputeHashAsync((await sampleGetter
+                    .GetAsync(sha256FromToken, partnerFromToken)).FileStream));
         }
 
         Assert.Single(tokens);

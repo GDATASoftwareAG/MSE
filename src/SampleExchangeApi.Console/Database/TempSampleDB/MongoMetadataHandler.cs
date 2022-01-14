@@ -2,18 +2,18 @@ using System;
 using MongoDB.Driver;
 using SampleExchangeApi.Console.Models;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace SampleExchangeApi.Console.Database.TempSampleDB;
 
-public class MongoMetadataReader : ISampleMetadataReader
+public class MongoMetadataHandler : ISampleMetadataHandler
 {
     private readonly IMongoCollection<ExportSample> _sampleCollection;
 
-    public MongoMetadataReader(ILogger<MongoMetadataReader> logger, IOptions<MongoMetadataOptions> options)
+    public MongoMetadataHandler(ILogger<MongoMetadataHandler> logger, IOptions<MongoMetadataOptions> options)
     {
         try
         {
@@ -28,14 +28,13 @@ public class MongoMetadataReader : ISampleMetadataReader
         }
     }
 
-    public async Task<IEnumerable<ExportSample>> GetSamplesAsync(DateTime start, DateTime? end, string sampleSet)
+    public async Task<IEnumerable<ExportSample>> GetSamplesAsync(DateTime start, DateTime? end, string sampleSet, CancellationToken token = default)
     {
-        var list = (end == null)
+        var list = end == null
             ? await _sampleCollection
-                .FindAsync(_ => _.SampleSet == sampleSet && _.Imported >= start)
+                .FindAsync(_ => _.SampleSet == sampleSet && _.Imported >= start, cancellationToken: token)
             : await _sampleCollection
-                .FindAsync(_ => _.SampleSet == sampleSet && _.Imported >= start && _.Imported <= end);
-
+                .FindAsync(_ => _.SampleSet == sampleSet && _.Imported >= start && _.Imported <= end, cancellationToken: token);
         return list.ToList();
     }
 }
