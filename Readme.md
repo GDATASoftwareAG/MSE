@@ -136,7 +136,8 @@ To configure the MSE itself, the [appsettings.json](./src/SampleExchangeApi.Cons
     "Expiration": 86400.0 // The expiration time of a token in seconds. If the time expired, the token is invalid and cannot be used anymore.
   },
   "Config": {
-    "YAML": "shareconfig.yml" // The file used to configure users and sample-sets.
+    "Url": "https://url", // the url is used to download partners config, if not provided fallback to file
+    "FilePath": "shareconfig.yml" // The file used to configure users and sample-sets.
   },
   "MongoDb": {
     "ConnectionString": "mongodb://localhost:27017", // Connection string to the MongoDB

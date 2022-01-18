@@ -56,7 +56,7 @@ public sealed class TokensApiController : Controller
             return basicAuth[0];
         }
 
-        _logger.LogWarning($"Failed login attempt for user: ${basicAuth[0]}");
+        _logger.LogWarning($"Failed login attempt for user: {basicAuth[0]}");
         throw new LoginFailedException();
     }
 

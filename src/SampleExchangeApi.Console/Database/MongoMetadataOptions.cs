@@ -1,4 +1,4 @@
-namespace SampleExchangeApi.Console.Database.TempSampleDB;
+namespace SampleExchangeApi.Console.Database;
 
 public class MongoMetadataOptions
 {

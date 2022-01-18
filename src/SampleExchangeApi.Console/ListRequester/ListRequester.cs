@@ -8,7 +8,6 @@ using JWT.Builder;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SampleExchangeApi.Console.Database;
-using SampleExchangeApi.Console.Database.TempSampleDB;
 using SampleExchangeApi.Console.Models;
 using SampleExchangeApi.Console.SampleDownload;
 
@@ -19,7 +18,7 @@ public class ListRequester : IListRequester
     private readonly ILogger _logger;
     private readonly ListRequesterOptions _options;
     private readonly ISampleMetadataHandler _sampleMetadataHandler;
-    private readonly List<Partner> _partners;
+    private readonly IPartnerProvider _partnerProvider;
     private readonly ISampleStorageHandler _sampleStorageHandler;
 
     public ListRequester(ILogger<ListRequester> logger, IOptions<ListRequesterOptions> options,
@@ -29,16 +28,16 @@ public class ListRequester : IListRequester
         _logger = logger;
         _options = options.Value ?? throw new ArgumentNullException(nameof(options));
         _sampleMetadataHandler = sampleMetadataHandler;
-        _partners = partnerProvider.GetPartners();
+        _partnerProvider = partnerProvider;
         _sampleStorageHandler = sampleStorageHandler;
     }
 
     public async Task<List<Token>> RequestListAsync(string username, DateTime start, DateTime? end,
         CancellationToken token = default)
     {
-        var includeFamilyName = _partners.Single(_ => _.Name == username).IncludeFamilyName;
+        var includeFamilyName = _partnerProvider.Partners.Single(_ => _.Name == username).IncludeFamilyName;
 
-        var sampleSet = _partners.SingleOrDefault(_ => _.Name == username)?.Sampleset;
+        var sampleSet = _partnerProvider.Partners.SingleOrDefault(_ => _.Name == username)?.Sampleset;
         var samples = await _sampleMetadataHandler.GetSamplesAsync(start, end, sampleSet, token);
 
         var tokens = new List<Token>();
