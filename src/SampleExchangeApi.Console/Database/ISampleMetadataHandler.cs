@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using SampleExchangeApi.Console.Models;
 
-namespace SampleExchangeApi.Console.Database.TempSampleDB;
+namespace SampleExchangeApi.Console.Database;
 
 /// <summary>
 /// 

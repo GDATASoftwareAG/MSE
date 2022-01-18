@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SampleExchangeApi.Console.ListRequester;
@@ -11,21 +13,36 @@ using YamlDotNet.Serialization.NamingConventions;
 
 namespace SampleExchangeApi.Console.Database;
 
-public interface IPartnerProvider
+public class PartnerProvider : IPartnerProvider, IDisposable
 {
-    bool AreCredentialsOkay(string username, string password);
-    List<Partner> GetPartners();
-}
+    private readonly ILogger<PartnerProvider> _logger;
+    private readonly HttpClient _httpClient;
+    private readonly PartnerProviderOptions _options;
+    private List<Partner> _partners = new();
+    private readonly Timer _timer;
 
-public class PartnerProvider : IPartnerProvider
-{
-    private readonly List<Partner> _partners;
+    public PartnerProvider(ILogger<PartnerProvider> logger, IOptions<PartnerProviderOptions> options,
+        HttpClient httpClient)
+    {
+        _logger = logger;
+        _httpClient = httpClient;
+        _options = options.Value;
+        LoadPartners(null);
+        _timer = new Timer(LoadPartners, null, TimeSpan.Zero, _options.RefreshInterval);
+    }
 
-    public PartnerProvider(ILogger<PartnerProvider> logger, IOptions<PartnerProviderOptions> options)
+    private void LoadPartners(object? _)
     {
         try
         {
-            var document = File.ReadAllText(options.Value.YAML);
+            if (!string.IsNullOrWhiteSpace(_options.Url))
+            {
+                var result = _httpClient.GetStringAsync(_options.Url).GetAwaiter().GetResult();
+                _partners = System.Text.Json.JsonSerializer.Deserialize<Settings>(result)
+                    ?.Partners ?? throw new InvalidDataException("Settings shouldn't be null");
+            }
+
+            var document = File.ReadAllText(_options.FilePath);
             var input = new StringReader(document);
 
             var deserializer = new DeserializerBuilder()
@@ -33,11 +50,12 @@ public class PartnerProvider : IPartnerProvider
                 .IgnoreUnmatchedProperties()
                 .Build();
 
-            _partners = deserializer.Deserialize<Settings>(input).Partners ?? throw new ArgumentException("partners is not set");
+            _partners = deserializer.Deserialize<Settings>(input)
+                .Partners ?? throw new ArgumentException("partners is not set");
         }
         catch (Exception e)
         {
-            logger.LogError(e.ToString());
+            _logger.LogError(e, "failed to LoadPartners");
             throw;
         }
     }
@@ -59,5 +77,10 @@ public class PartnerProvider : IPartnerProvider
         return partner.Password.Equals(Sha256.ByteArrayToString(hash));
     }
 
-    public List<Partner> GetPartners() => _partners;
+    public IEnumerable<Partner> Partners => _partners;
+
+    public void Dispose()
+    {
+        _timer.Dispose();
+    }
 }

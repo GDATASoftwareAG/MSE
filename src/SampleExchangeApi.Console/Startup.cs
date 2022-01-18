@@ -7,7 +7,6 @@ using Microsoft.OpenApi.Models;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using SampleExchangeApi.Console.Database;
-using SampleExchangeApi.Console.Database.TempSampleDB;
 using SampleExchangeApi.Console.ListRequester;
 using SampleExchangeApi.Console.SampleDownload;
 
@@ -33,6 +32,7 @@ public class Startup
         services.AddTransient<ISampleStorageHandler, SampleStorageHandler>();
 
         services.Configure<PartnerProviderOptions>(_configuration.GetSection("Config"));
+        services.AddHttpClient<PartnerProvider>();
         services.AddTransient<IPartnerProvider, PartnerProvider>();
 
         services.Configure<ListRequesterOptions>(_configuration.GetSection("Token"));

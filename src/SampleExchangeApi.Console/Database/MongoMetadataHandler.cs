@@ -1,13 +1,13 @@
 using System;
-using MongoDB.Driver;
-using SampleExchangeApi.Console.Models;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MongoDB.Driver;
+using SampleExchangeApi.Console.Models;
 
-namespace SampleExchangeApi.Console.Database.TempSampleDB;
+namespace SampleExchangeApi.Console.Database;
 
 public class MongoMetadataHandler : ISampleMetadataHandler
 {

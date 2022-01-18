@@ -4,13 +4,13 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using JWT.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using Moq;
-using SampleExchangeApi.Console.Database.TempSampleDB;
 using SampleExchangeApi.Console.ListRequester;
 using SampleExchangeApi.Console.Models;
 using SampleExchangeApi.Console.SampleDownload;
@@ -42,8 +42,8 @@ public class SampleExchangeTest
         return new PartnerProvider(Mock.Of<ILogger<PartnerProvider>>(),
             new OptionsWrapper<PartnerProviderOptions>(new PartnerProviderOptions
             {
-                YAML = Configuration["Config:YAML"]
-            }));
+                FilePath = Configuration["Config:FilePath"]
+            }), new HttpClient());
     }
     private ISampleStorageHandler CreateSampleGetter()
     {
