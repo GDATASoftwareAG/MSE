@@ -8,6 +8,7 @@ using JWT.Algorithms;
 using Microsoft.AspNetCore.Mvc;
 using JWT.Builder;
 using JWT.Exceptions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -49,6 +50,7 @@ public sealed class SampleApiController : ControllerBase
     /// <param name="token">download</param>
     [HttpGet]
     [Route("/v1/download")]
+    [AllowAnonymous]
     [ValidateModelState]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "The token is expired.")]
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "Bad request.")]

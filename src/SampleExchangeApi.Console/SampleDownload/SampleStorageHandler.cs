@@ -52,6 +52,14 @@ public class SampleStorageHandler : ISampleStorageHandler
             "application/octet-stream"));
     }
 
+    public async Task WriteAsync(string sha256, Stream stream, CancellationToken token = default)
+    {
+        var path = GetPath(sha256);
+        Directory.CreateDirectory(Path.GetDirectoryName(path) ?? throw new InvalidOperationException());
+        await using var fileStream = File.OpenWrite(path);
+        await stream.CopyToAsync(fileStream, token);
+    }
+
     private string GetPath(string sha256)
     {
         var pathPartSha256 = sha256.ToLower();

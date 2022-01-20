@@ -3,16 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using System.Linq;
 using System.Net.Http;
-using System.Threading.Tasks;
 using JWT.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using MongoDB.Driver;
 using Moq;
 using SampleExchangeApi.Console.ListRequester;
-using SampleExchangeApi.Console.Models;
 using SampleExchangeApi.Console.SampleDownload;
 using Xunit;
 using JWT.Algorithms;
@@ -22,7 +18,7 @@ using SampleExchangeApi.Console.Database;
 namespace SampleExchangeApi.Console_Test;
 
 [Collection("DockerContainerCollection")]
-public class SampleExchangeTest
+public class SampleExchangeTest : IClassFixture<DockerFixture>
 {
     private readonly DockerFixture _dockerFixture;
 
@@ -68,7 +64,7 @@ public class SampleExchangeTest
         var options = new MongoMetadataOptions();
         Configuration.GetSection("MongoDb").Bind(options);
         options.ConnectionString = $"mongodb://{_dockerFixture.IpAddress}:27017";
-        return new MongoMetadataHandler(Mock.Of<ILogger<MongoMetadataHandler>>(), new OptionsWrapper<MongoMetadataOptions>(options));
+        return new MongoMetadataHandler(new OptionsWrapper<MongoMetadataOptions>(options));
     }
 
     private static string HexStringFromBytes(IEnumerable<byte> bytes)
