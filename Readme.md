@@ -124,19 +124,22 @@ Make sure that the folder `/mnt/sampleexportstorage/` exists and execute the Pyt
 `python3 ./src/FillMongoWithTestData/main.py -s "/mnt/sampleexportstorage/" -m "mongodb://localhost:27017"`.
 
 This scripts creates three benign test samples on the share and adds meta data to the Mongodb.
-Now you can start up Exchange API by changing to directory `./src/SampleExchangeApi.Console/` and typing `dotnet run`.
+Now you can start up Exchange API by changing to directory `./src/MalwareSampleExchange.Console/` and typing `dotnet run`.
 
 ## Configuration
 
-To configure the MSE itself, the [appsettings.json](./src/SampleExchangeApi.Console/appsettings.json) is used.
+To configure the MSE itself, the [appsettings.json](./src/MalwareSampleExchange.Console/appsettings.json) is used.
 ```json
 {
   "Token": {
     "Secret": "PutSomeNiceSecretHere", // The global secret used to "sign" the JWTs. Only you must know it.
     "Expiration": 86400.0 // The expiration time of a token in seconds. If the time expired, the token is invalid and cannot be used anymore.
   },
+  "Upload": {
+    "AllowPartnerToUpload": "" // allow a single partner to be able to upload
+  },
   "Config": {
-    "Url": "https://url", // the url is used to download partners config, if not provided fallback to file
+    "Url": "https://url", // the url is used to download partners config as json, if not provided fallback to file
     "FilePath": "shareconfig.yml" // The file used to configure users and sample-sets.
   },
   "MongoDb": {
@@ -169,7 +172,7 @@ The `Storage` must have a specific folder structure. All files have to be named 
   - /FF
 ```
 
-For the configuration of users and their corresponding data sets, the [shareconfig.yaml](./src/SampleExchangeApi.Console/sh
+For the configuration of users and their corresponding data sets, the [shareconfig.yaml](./src/MalwareSampleExchange.Console/sh
 ) is used. The MongoDB does not know about any users, it only contains samples which belong to a set.
 
 ```yaml
