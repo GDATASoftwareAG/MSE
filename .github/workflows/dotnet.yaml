@@ -1,4 +1,4 @@
-name: SampleExport
+name: MalwareSampleExchange
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
       with:
         dotnet-version: 6.0.x
     - name: check format
-      run: dotnet format --severity error --verify-no-changes ./SampleExchangeApi.sln
+      run: dotnet format --severity error --verify-no-changes ./MalwareSampleExchange.sln
 
   build:
     runs-on: ubuntu-latest
@@ -32,14 +32,14 @@ jobs:
     - name: Set env
       run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
     - name: Install dependencies
-      run: dotnet restore SampleExchangeApi.sln
+      run: dotnet restore MalwareSampleExchange.sln
     - name: Build
-      run: dotnet build --configuration Release --no-restore SampleExchangeApi.sln
+      run: dotnet build --configuration Release --no-restore MalwareSampleExchange.sln
     - name: Test
-      run: dotnet test --no-restore --verbosity normal SampleExchangeApi.sln
+      run: dotnet test --no-restore --verbosity normal MalwareSampleExchange.sln
 
     - name: Publish
-      run: dotnet publish -v minimal -c Release --no-restore -o ./artifacts ./src/SampleExchangeApi.Console/SampleExchangeApi.Console.csproj
+      run: dotnet publish -v minimal -c Release --no-restore -o ./artifacts ./src/MalwareSampleExchange.Console/MalwareSampleExchange.Console.csproj
     - name: Upload Artifacts
       uses: actions/upload-artifact@v2
       with:
