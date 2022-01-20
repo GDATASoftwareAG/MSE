@@ -19,4 +19,6 @@ public interface ISampleMetadataHandler
     /// <param name="sampleSet"></param>
     /// <returns></returns>
     Task<IEnumerable<ExportSample>> GetSamplesAsync(DateTime start, DateTime? end, string sampleSet, CancellationToken token = default);
+
+    Task InsertSampleAsync(ExportSample sample, CancellationToken token = default);
 }

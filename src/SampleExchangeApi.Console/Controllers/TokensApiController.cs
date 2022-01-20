@@ -1,8 +1,10 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -17,11 +19,11 @@ namespace SampleExchangeApi.Console.Controllers;
 /// <inheritdoc />
 /// <summary>
 /// </summary>
+[Authorize]
 public sealed class TokensApiController : Controller
 {
     private readonly ILogger<TokensApiController> _logger;
     private readonly IListRequester _listRequester;
-    private readonly IPartnerProvider _partnerProvider;
 
     /// <summary>
     /// 
@@ -29,35 +31,10 @@ public sealed class TokensApiController : Controller
     /// <param name="logger"></param>
     /// <param name="listRequester"></param>
     /// <param name="partnerProvider"></param>
-    public TokensApiController(ILogger<TokensApiController> logger, IListRequester listRequester, IPartnerProvider partnerProvider)
+    public TokensApiController(ILogger<TokensApiController> logger, IListRequester listRequester)
     {
         _logger = logger;
         _listRequester = listRequester;
-        _partnerProvider = partnerProvider;
-    }
-
-    private string ValidateCredentialsAndReturnUsername(string authorizationHeaders)
-    {
-        if (string.IsNullOrEmpty(authorizationHeaders))
-        {
-            _logger.LogWarning("No credentials given.");
-            throw new LoginFailedException();
-        }
-
-        if (!authorizationHeaders.Contains(":"))
-        {
-            var data = Convert.FromBase64String(authorizationHeaders.Split(" ")[1]);
-            authorizationHeaders = Encoding.UTF8.GetString(data);
-        }
-
-        var basicAuth = authorizationHeaders.Split(':');
-        if (_partnerProvider.AreCredentialsOkay(basicAuth[0], basicAuth[1]))
-        {
-            return basicAuth[0];
-        }
-
-        _logger.LogWarning($"Failed login attempt for user: {basicAuth[0]}");
-        throw new LoginFailedException();
     }
 
     /// <summary>
@@ -76,9 +53,9 @@ public sealed class TokensApiController : Controller
     {
         try
         {
-            var authorizationHeaders = Request.Headers["Authorization"].ToString();
-            var username = ValidateCredentialsAndReturnUsername(authorizationHeaders);
-
+            _logger.LogInformation("Incoming ListRequest");
+            var claimsIdentity = User.Identity as ClaimsIdentity;
+            var username = claimsIdentity?.FindFirst(ClaimTypes.Name)?.Value ?? String.Empty;
             if (start >= end)
             {
                 return StatusCode(400, new Error
@@ -96,13 +73,8 @@ public sealed class TokensApiController : Controller
                     Message = "Start date cannot be older than 7 days."
                 });
             }
-            _logger.LogInformation("Incoming ListRequest");
 
             return Ok(await _listRequester.RequestListAsync(username, start, end, token));
-        }
-        catch (LoginFailedException)
-        {
-            return StatusCode(401, new Error { Code = 401, Message = "Login Failure." });
         }
         catch (Exception e)
         {

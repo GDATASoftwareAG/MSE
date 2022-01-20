@@ -1,28 +1,23 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Services;
 using Microsoft.Extensions.Configuration;
-using MongoDB.Driver;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Moq;
+using SampleExchangeApi.Console.Database;
 using SampleExchangeApi.Console.Models;
+using SampleExchangeApi.Console.SampleDownload;
 using Xunit;
 
 namespace SampleExchangeApi.Console_Test;
 
-[CollectionDefinition("DockerContainerCollection")]
-public class DatabaseCollection : ICollectionFixture<DockerFixture>
-{
-    // This class has no code, and is never created. Its purpose is simply
-    // to be the place to apply [CollectionDefinition] and all the
-    // ICollectionFixture<> interfaces.
-}
-
 [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
-public class DockerFixture : IDisposable
+public class DockerFixture : IAsyncLifetime
 {
     private static readonly IConfiguration Configuration = new ConfigurationBuilder()
         .SetBasePath(Directory.GetCurrentDirectory())
@@ -31,60 +26,46 @@ public class DockerFixture : IDisposable
         .Build();
 
     private IContainerService? _container;
+    private readonly ISampleStorageHandler _storageHandler;
+    private readonly MongoMetadataHandler _metadataHandler;
     public readonly string IpAddress;
 
     public DockerFixture()
     {
+        _storageHandler = new SampleStorageHandler(Mock.Of<ILogger<SampleStorageHandler>>(),
+            new OptionsWrapper<StorageOptions>(new StorageOptions
+            {
+                Path = Configuration["Storage:Path"]
+            }));
         IpAddress = StartMongoDbContainer();
+
+        var options = new MongoMetadataOptions();
+        Configuration.GetSection("MongoDb").Bind(options);
+        options.ConnectionString = $"mongodb://{IpAddress}:27017";
+        _metadataHandler = new MongoMetadataHandler(new OptionsWrapper<MongoMetadataOptions>(options));
     }
 
-    private static void CreateTestFile()
+    private async Task WriteFileWrapperAsync(string sha256, string s)
     {
-        try
-        {
-            Directory.CreateDirectory($"{Configuration["Storage:Path"]}/13/1f");
-            Directory.CreateDirectory($"{Configuration["Storage:Path"]}/cd/a0");
-        }
-        catch (Exception)
-        {
-            // ignored
-        }
-
-        var eicar = "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*\n";
-        var eicarZwei = "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*\nDIE ZWEITE\n";
-
-        using (var file =
-               File.Create(
-                   $"{Configuration["Storage:Path"]}/13/1f/131f95c51cc819465fa1797f6ccacf9d494aaaff46fa3eac73ae63ffbdfd8267")
-              )
-        {
-            file.Write(Encoding.ASCII.GetBytes(eicar), 0, eicar.Length);
-        }
-
-        using (var file =
-               File.Create(
-                   $"{Configuration["Storage:Path"]}/cd/a0/cda0a81901ced9306d023500ff1c383d6b4bd8cebefa886faa2a627a796e87f")
-              )
-        {
-            file.Write(Encoding.ASCII.GetBytes(eicarZwei), 0, eicar.Length);
-        }
+        var stream = new MemoryStream();
+        var writer = new StreamWriter(stream);
+        await writer.WriteAsync(s);
+        await writer.FlushAsync();
+        stream.Position = 0;
+        await _storageHandler.WriteAsync(sha256, stream);
     }
 
-    private static void WriteFakeDataIntoTestMongo(IMongoClient mongoClient)
+    private async Task CreateTestFilesAsync()
     {
-        var mongoDatabase = mongoClient.GetDatabase(Configuration["MongoDb:DatabaseName"]);
-        var mongoCollection = mongoDatabase.GetCollection<ExportSample>(Configuration["MongoDb:CollectionName"]);
+        await WriteFileWrapperAsync("131f95c51cc819465fa1797f6ccacf9d494aaaff46fa3eac73ae63ffbdfd8267",
+            "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*\n");
+        await WriteFileWrapperAsync("cda0a81901ced9306d023500ff1c383d6b4bd8cebefa886faa2a627a796e87f",
+            "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*\nDIE ZWEITE\n");
+    }
 
-        var indexes = Configuration.GetSection("MongoDb:Indexes").GetChildren().ToArray().Select(c => c.Value)
-            .ToArray();
-
-        foreach (var index in indexes)
-        {
-            mongoCollection.Indexes.CreateOne(
-                new CreateIndexModel<ExportSample>(Builders<ExportSample>.IndexKeys.Ascending(index)));
-        }
-
-        mongoCollection.InsertOne(
+    private async Task CreateTestExportSamplesAsync()
+    {
+        await _metadataHandler.InsertSampleAsync(
             new ExportSample
             {
                 Sha256SampleSet = "131f95c51cc819465fa1797f6ccacf9d494aaaff46fa3eac73ae63ffbdfd8267:Classic",
@@ -95,7 +76,7 @@ public class DockerFixture : IDisposable
                 SampleSet = "Classic",
                 FamilyName = "foobar"
             });
-        mongoCollection.InsertOne(
+        await _metadataHandler.InsertSampleAsync(
             new ExportSample
             {
                 Sha256SampleSet = "cda0a81901ced9306d023500ff1c383d6b4bd8cebefa886faa2a627a796e87f:Classic",
@@ -106,7 +87,7 @@ public class DockerFixture : IDisposable
                 SampleSet = "Classic",
                 FamilyName = "barfoo"
             });
-        mongoCollection.InsertOne(
+        await _metadataHandler.InsertSampleAsync(
             new ExportSample
             {
                 Sha256SampleSet = "52f1a61ae232c5dcba376c60d6ba2b22a34e3c39d2fd2563f2cc9cc7b2a77a2b:Example",
@@ -134,10 +115,6 @@ public class DockerFixture : IDisposable
 
         Thread.Sleep(10000);
 
-        var mongoClient = new MongoClient($"mongodb://{containerIp}:27017");
-        WriteFakeDataIntoTestMongo(mongoClient);
-        CreateTestFile();
-
         return containerIp;
     }
 
@@ -147,8 +124,17 @@ public class DockerFixture : IDisposable
         container.Remove();
     }
 
-    public void Dispose()
+    public async Task InitializeAsync()
+    {
+        await _metadataHandler.StartAsync();
+        await CreateTestFilesAsync();
+        await CreateTestExportSamplesAsync();
+    }
+
+    public Task DisposeAsync()
     {
         StopDockerContainer(_container);
+        Directory.Delete(Configuration["Storage:Path"], true);
+        return Task.CompletedTask;
     }
 }

@@ -67,7 +67,7 @@ public class PartnerProvider : IPartnerProvider, IDisposable
 
     public bool AreCredentialsOkay(string username, string password)
     {
-        var partner = _partners.SingleOrDefault(_ => _.Name == username, null);
+        var partner = _partners.SingleOrDefault(_ => _?.Name == username, null);
         if (partner == null)
         {
             return false;
