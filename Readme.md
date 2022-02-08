@@ -133,7 +133,7 @@ To configure the MSE itself, the [appsettings.json](./src/MalwareSampleExchange.
 {
   "Token": {
     "Secret": "PutSomeNiceSecretHere", // The global secret used to "sign" the JWTs. Only you must know it.
-    "Expiration": 86400.0 // The expiration time of a token in seconds. If the time expired, the token is invalid and cannot be used anymore.
+    "Expiration": "1.00:00:00" // The expiration timespan with format "d.hh:mm:ss". If the time expired, the token is invalid and cannot be used anymore. 
   },
   "Upload": {
     "AllowPartnerToUpload": "" // allow a single partner to be able to upload
