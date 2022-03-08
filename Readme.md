@@ -148,7 +148,7 @@ To configure the MSE itself, the [appsettings.json](./src/MalwareSampleExchange.
     "CollectionName": "Sample" // Collection name in the MongoDB database.
   },
   "Storage": {
-    "Backend": "File", // Allows to store sample on file system or in S3, possible values: File, S3. 
+    "Backend": "File", // Allows to store sample on file system or in S3, possible values: File, S3, and Url. 
     "Path": "/mnt/sampleexportstorage" // Path to the actual samples, only required for backend File.
   }
 }
