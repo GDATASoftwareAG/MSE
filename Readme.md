@@ -8,7 +8,7 @@ Our idea is to provide a standardized exchange system which meets the following 
 
 - The ability to choose only the malware samples you need. 
 - The ability for partners to filter before the download.
-  - SHA265 
+  - SHA256 
   - Categories which can include, but is not limited to, the target platform or specific detections.
 - Easy to consume API and built on current web standards ([OpenAPI](https://www.openapis.org/))
 - Easy to set up in a few minutes, so that every exchange partner is able to host it with little added effort.
